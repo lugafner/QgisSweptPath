@@ -1,0 +1,7 @@
+[general]
+name=QgisSweptPath
+qgisMinimumVersion=3.0
+description=Swept Path simulation with qgis
+version=0.1
+author=Lukas Gafner
+email=lugafner@proton.me
