@@ -25,7 +25,10 @@ class Vehicle:
     def _init_fehicle_coords(self):
         """Initialises the vehicle coordinates"""
         # Calculated parameters
-        self._wheelbase = self._rear_axle_ref_pos - self._front_axle_ref_pos
+        wheelbase = self._rear_axle_ref_pos - self._front_axle_ref_pos
+        back_distanz = self._body_length - self._front_axle_ref_pos
+        wheel_side_offset = self._axle_with / 2
+        body_side_offset = self._body_width / 2
 
         # Vehicle local crs (polar)
         #   BL    RWL             FWL   FL
@@ -35,15 +38,15 @@ class Vehicle:
         #   |                           |
         #   +-----+---------------+-----+
         #   BR    RWR             FWR   FR
-        self._local_point_h = CoordUtils.polarFromShift()
-        self._local_point_bl = PolarCoord()
-        self._local_point_rwl = PolarCoord()
-        self._local_point_fwl = PolarCoord()
-        self._local_point_fl = PolarCoord()
-        self._local_point_br = PolarCoord()
-        self._local_point_rwr = PolarCoord()
-        self._local_point_fwr = PolarCoord()
-        self._local_point_fr = PolarCoord()
+        self._local_point_h = CoordUtils.toPolar(- wheelbase, 0)
+        self._local_point_bl = CoordUtils.toPolar(- back_distanz, body_side_offset)
+        self._local_point_rwl = CoordUtils.toPolar(- wheelbase, wheel_side_offset)
+        self._local_point_fwl = CoordUtils.toPolar(0, wheel_side_offset)
+        self._local_point_fl = CoordUtils.toPolar(self._front_axle_ref_pos, body_side_offset)
+        self._local_point_br = CoordUtils.toPolar(- back_distanz, - body_side_offset)
+        self._local_point_rwr = CoordUtils.toPolar(- wheelbase, - wheel_side_offset)
+        self._local_point_fwr = CoordUtils.toPolar(0, - wheel_side_offset)
+        self._local_point_fr = CoordUtils.toPolar(self._front_axle_ref_pos, - wheel_side_offset)
         
         # Fehicle position
         self._front_axle_ref_pos = CartesianCoord(0, 0)  # Initialize reference point with 0, 0
