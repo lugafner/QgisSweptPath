@@ -9,25 +9,20 @@ class PolarCoord:
         return (isinstance(value, PolarCoord) and 
                 (round(self.d, 6) == round(value.d, 6)) and
                 (round(self.a, 6) == round(value.a, 6)))
+    
+    def __str__(self):
+        return f"d = {self.d}, a = {self.a}"
 
     def toCartesian(self):
-        return CoordUtils.toCartesian(self._d, self._a)
+        return CoordUtils.toCartesian(self.d, self.a)
 
     @property
     def d(self):
         return self._d
-    
-    @d.setter
-    def d(self, value):
-        self._d = value
         
     @property
     def a(self):
         return self._a
-    
-    @a.setter
-    def a(self, value):
-        self._a = value
     
 
 class CartesianCoord:
@@ -39,26 +34,38 @@ class CartesianCoord:
         return (isinstance(value, CartesianCoord) and 
                 (round(self.x, 6) == round(value.x, 6)) and
                 (round(self.y, 6) == round(value.y, 6)))
+    
+    def __str__(self):
+        return f"x = {self.x}, y = {self.y}"
+
+    def __add__(self, value):
+        if (isinstance(value, CartesianCoord)):
+            self._x += value.x
+            self._y += value.y
+            return self
+        else:
+            raise TypeError(f"The object {value} is not a {type(self)}.")
+        
+    def __sub__(self, value):
+        if (isinstance(value, CartesianCoord)):
+            self._x -= value.x
+            self._y -= value.y
+            return self
+        else:
+            raise TypeError(f"The object {value} is not a {type(self)}.")
 
     def toPolar(self):
-        return CoordUtils.toPolar(self._x, self._y)
+        return CoordUtils.toPolar(self.x, self.y)
 
     @property
     def x(self):
         return self._x
     
-    @x.setter
-    def x(self, value):
-        self._x = value
-        
     @property
     def y(self):
         return self._y
     
-    @y.setter
-    def y(self, value):
-        self._y = value
-    
+
 class CoordUtils:
     def __init__(self):
         """Pass Constructor. Only static functions"""
@@ -66,24 +73,24 @@ class CoordUtils:
 
     @staticmethod
     def toPolar(dx: float, dy: float) -> PolarCoord:
-        polar: PolarCoord = PolarCoord()
-        polar.a = math.atan2(dy, dx)
-        polar.d = math.sqrt(dx**2 + dy**2)
+        """Creates a polar coordinat from delta x and delta y
 
-        print(polar.a)
-        print(polar.d)
-
-        return polar
+        @param dx: Delta x
+        @param dy: Delta y
+        @return: Polar coordinate (0.0rad = east)
+        """        
+        return PolarCoord(
+            a=math.atan2(dy, dx),
+            d=math.sqrt(dx**2 + dy**2))
     
     @staticmethod
     def toCartesian(d: float, a: float) -> CartesianCoord:
-        cartesian: CartesianCoord = CartesianCoord()
-        print(a)
+        """Creates a cartesian coordinate from a distance and angle
 
-        cartesian.x = d * math.cos(a)
-        cartesian.y = d * math.sin(a)
-
-        print(cartesian.x)
-        print(cartesian.y)
-
-        return cartesian
+        @param d: Distance
+        @param a: Angle (0.0rad = east)
+        @return: Cartesian coordinate (x = east, y = north)
+        """    
+        return CartesianCoord(
+            x=d * math.cos(a),
+            y=d * math.sin(a))

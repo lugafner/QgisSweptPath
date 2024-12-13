@@ -14,5 +14,17 @@ class TestCoordConversion(unittest.TestCase):
         self.assertEqual(coord4q.toPolar().toCartesian(), coord4q)
 
 
+class TestCoordCalculations(unittest.TestCase):
+    def testCartesianAddition(self):
+        coord1 = CartesianCoord(-1, 2)
+        coord2 = CartesianCoord(4, -8)
+        self.assertEqual(coord1 + coord2, CartesianCoord(3, -6))
+
+    def testCartesianSubtraction(self):
+        coord1 = CartesianCoord(-1, 2)
+        coord2 = CartesianCoord(4, -8)
+        self.assertEqual(coord1 - coord2, CartesianCoord(-5, 10))
+
+
 if __name__ == '__main__':
     unittest.main()
