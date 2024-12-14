@@ -1,7 +1,7 @@
 import math
 
 from typing import Final
-from coord import PolarCoord, CartesianCoord, CoordUtils
+from .coord import PolarCoord, CartesianCoord, CoordUtils
 
 
 class Vehicle:
@@ -20,7 +20,19 @@ class Vehicle:
         self._trailer: Final[Vehicle] = None
         # Connection point must always be initialised with a value
         self._connection_point: Final[float] = 11.65
+        # Vehicle type (init with True for standard vehicle)
+        self._has_body: bool = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
+        self._has_front_axle: bool = True  # when false, no front axle will be drawn (i.e. semitrailer)
+        # TODO: Graphics
+        
+        # Technical fields
+        self._vehicle_is_placed: bool = False
+        self._do_drawing: bool = True
 
+        # Setup vehicle shape
+        self._init_vehicle_shape()
+
+    def _init_vehicle_shape(self):
         # Vehicle local crs (polar from F)
         #   BL     RWL             FWL   FL
         #   +------+---------------+-----+
@@ -29,29 +41,38 @@ class Vehicle:
         #   |                            |
         #   +------+---------------+-----+
         #   BR     RWR             FWR   FR
-        # Calculated parameters
-        self._wheelbase: Final[float] = self._rear_axle_ref_pos - self._front_axle_ref_pos
-        back_distanz: Final[float] = self._body_length - self._front_axle_ref_pos
-        connection_point_distance: Final[float] = self._connection_point - self._front_axle_ref_pos
-        wheel_side_offset: Final[float] = self._axle_with / 2
-        body_side_offset: Final[float] = self._body_width / 2
+        # Setup polar coordinates of the vehicle local crs
+        # Necessary points
+        # Setup rear reference point
+        wheelbase: float = self._rear_axle_ref_pos - self._front_axle_ref_pos
+        self._local_point_h: PolarCoord = CoordUtils.toPolar(- wheelbase, 0.0)
+        # Setup connection point
+        connection_point_distance: float = self._connection_point - self._front_axle_ref_pos
+        self._local_point_cp: PolarCoord = CoordUtils.toPolar(- connection_point_distance, 0.0)
 
-        self._local_point_h: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, 0.0)
-        self._local_point_bl: Final[PolarCoord] = CoordUtils.toPolar(- back_distanz, body_side_offset)
-        self._local_point_rwl: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, wheel_side_offset)
-        self._local_point_fwl: Final[PolarCoord] = CoordUtils.toPolar(0.0, wheel_side_offset)
-        self._local_point_fl: Final[PolarCoord] = CoordUtils.toPolar(self._front_axle_ref_pos, body_side_offset)
-        self._local_point_br: Final[PolarCoord] = CoordUtils.toPolar(- back_distanz, - body_side_offset)
-        self._local_point_rwr: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, - wheel_side_offset)
-        self._local_point_fwr: Final[PolarCoord] = CoordUtils.toPolar(0.0, - wheel_side_offset)
-        self._local_point_fr: Final[PolarCoord] = CoordUtils.toPolar(self._front_axle_ref_pos, - wheel_side_offset)
-        self._local_point_cp: Final[PolarCoord] = CoordUtils.toPolar(- connection_point_distance, 0.0)
+        # Setup body
+        if self._has_body:
+            back_distanz: float = self._body_length - self._front_axle_ref_pos
+            body_side_offset: float = self._body_width / 2
+            wheel_side_offset: float = self._axle_with / 2
 
+            self._local_point_bl: PolarCoord = CoordUtils.toPolar(- back_distanz, body_side_offset)
+            self._local_point_rwl: PolarCoord = CoordUtils.toPolar(- wheelbase, wheel_side_offset)
+            self._local_point_fl: PolarCoord = CoordUtils.toPolar(self._front_axle_ref_pos, body_side_offset)
+            self._local_point_br: PolarCoord = CoordUtils.toPolar(- back_distanz, - body_side_offset)
+            self._local_point_rwr: PolarCoord = CoordUtils.toPolar(- wheelbase, - wheel_side_offset)
+            self._local_point_fr: PolarCoord = CoordUtils.toPolar(self._front_axle_ref_pos, - wheel_side_offset)
+
+        if self._has_body and self._has_front_axle:
+            self._local_point_fwl: PolarCoord = CoordUtils.toPolar(0.0, wheel_side_offset)
+            self._local_point_fwr: PolarCoord = CoordUtils.toPolar(0.0, - wheel_side_offset)
+
+        # TODO: Remove, if the vehicle is always placed first
         # Initialise Fehicle position
-        self._global_f = CartesianCoord(0.0, 0.0)  # Initialize reference point with 0, 0
-        self._global_h = CartesianCoord(- self._wheelbase, 0.0)
-        self._global_a: float = self._calc_azimuth()  # Initialize azimuth (get from f and h)
-        self._global_cp: CartesianCoord = self._calc_global_coord(self._local_point_cp)
+        # self._global_f = CartesianCoord(0.0, 0.0)  # Initialize reference point with 0, 0
+        # self._global_h = CartesianCoord(- self._wheelbase, 0.0)
+        # self._global_a: float = self._calc_azimuth()  # Initialize azimuth (get from f and h)
+        # self._global_cp: CartesianCoord = self._calc_global_coord(self._local_point_cp)
         
 
     def _calc_azimuth(self) -> float:
@@ -74,6 +95,22 @@ class Vehicle:
         new_azimut: float = self._global_a + local_coord.a
         cartesian_shift: CartesianCoord = CoordUtils.toCartesian(local_coord.d, new_azimut)
         return cartesian_shift + self._global_f 
+    
+    def _draw(self):
+        if self._has_body: self._draw_body()
+        if self._has_front_axle: self._draw_front_axle()
+
+    def _draw_body(self):
+        self._global_bl: CartesianCoord = self._calc_global_coord(self._local_point_bl)
+        self._global_fl: CartesianCoord = self._calc_global_coord(self._local_point_fl)
+        self._global_br: CartesianCoord = self._calc_global_coord(self._local_point_br)
+        self._global_fr: CartesianCoord = self._calc_global_coord(self._local_point_fr)
+        self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
+        self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
+
+    def _draw_front_axle(self):
+        self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
+        self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -93,6 +130,11 @@ class Vehicle:
         if (self._trailer):
             self._trailer.place_vehicle(self._global_cp, self._global_a)
 
+        # Draw the rest of the body points
+        if self._do_drawing: self._draw()
+
+        self._vehicle_is_placed = True
+
 
     def step(self, steering_angle:float, simulation_step:float=0.5):
         """
@@ -102,13 +144,15 @@ class Vehicle:
         @param simulation_step: Distance to drive per step (TODO: Calibrate)
         @return: All global vehicle coordinates (TODO: Are they needed?)
         """
+        assert self._vehicle_is_placed, "Vehicle must be placed first"
         driving_vector = PolarCoord(simulation_step, steering_angle)
         self._global_f = self._calc_global_coord(driving_vector)
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_h)
         self._global_cp = self._calc_global_coord(self._local_point_cp)
         
-        # TODO: Call function for the rest of the body points
+        # Draw the rest of the body points
+        if self._do_drawing: self._draw()
 
         # Simulate trailer
         if (self._trailer):
@@ -121,11 +165,13 @@ class Vehicle:
         
         @param connection_point: Global cartesian coordinate of the connection point
         """
+        assert self._vehicle_is_placed, "Vehicle must be placed first"
         self._global_f = connection_point
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_cp)
 
-        # TODO: Call function for the rest of the body points
+        # Draw the rest of the body points
+        if self._do_drawing: self._draw()
 
         # Simulate trailer
         if (self._trailer):
