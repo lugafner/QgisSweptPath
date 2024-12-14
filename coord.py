@@ -40,17 +40,19 @@ class CartesianCoord:
 
     def __add__(self, value):
         if (isinstance(value, CartesianCoord)):
-            self._x += value.x
-            self._y += value.y
-            return self
+            return CartesianCoord(
+                x=self._x + value.x,
+                y=self._y + value.y
+            )
         else:
             raise TypeError(f"The object {value} is not a {type(self)}.")
         
     def __sub__(self, value):
         if (isinstance(value, CartesianCoord)):
-            self._x -= value.x
-            self._y -= value.y
-            return self
+            return CartesianCoord(
+                x=self._x - value.x,
+                y=self._y - value.y
+            )
         else:
             raise TypeError(f"The object {value} is not a {type(self)}.")
 
