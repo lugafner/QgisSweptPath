@@ -19,7 +19,7 @@ class Vehicle:
         # Trailer
         self._trailer: Final[Vehicle] = None
         # Connection point must always be initialised with a value
-        self._connection_point: Final[float] = 15.00
+        self._connection_point: Final[float] = 11.65
 
         # Vehicle local crs (polar from F)
         #   BL     RWL             FWL   FL
@@ -36,20 +36,20 @@ class Vehicle:
         wheel_side_offset: Final[float] = self._axle_with / 2
         body_side_offset: Final[float] = self._body_width / 2
 
-        self._local_point_h: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, 0)
+        self._local_point_h: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, 0.0)
         self._local_point_bl: Final[PolarCoord] = CoordUtils.toPolar(- back_distanz, body_side_offset)
         self._local_point_rwl: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, wheel_side_offset)
-        self._local_point_fwl: Final[PolarCoord] = CoordUtils.toPolar(0, wheel_side_offset)
+        self._local_point_fwl: Final[PolarCoord] = CoordUtils.toPolar(0.0, wheel_side_offset)
         self._local_point_fl: Final[PolarCoord] = CoordUtils.toPolar(self._front_axle_ref_pos, body_side_offset)
         self._local_point_br: Final[PolarCoord] = CoordUtils.toPolar(- back_distanz, - body_side_offset)
         self._local_point_rwr: Final[PolarCoord] = CoordUtils.toPolar(- self._wheelbase, - wheel_side_offset)
-        self._local_point_fwr: Final[PolarCoord] = CoordUtils.toPolar(0, - wheel_side_offset)
+        self._local_point_fwr: Final[PolarCoord] = CoordUtils.toPolar(0.0, - wheel_side_offset)
         self._local_point_fr: Final[PolarCoord] = CoordUtils.toPolar(self._front_axle_ref_pos, - wheel_side_offset)
-        self._local_point_cp: Final[PolarCoord] = CoordUtils.toPolar(- connection_point_distance, 0)
+        self._local_point_cp: Final[PolarCoord] = CoordUtils.toPolar(- connection_point_distance, 0.0)
 
         # Initialise Fehicle position
-        self._global_f = CartesianCoord(0, 0)  # Initialize reference point with 0, 0
-        self._global_h = CartesianCoord(- self._wheelbase, 0)
+        self._global_f = CartesianCoord(0.0, 0.0)  # Initialize reference point with 0, 0
+        self._global_h = CartesianCoord(- self._wheelbase, 0.0)
         self._global_a: float = self._calc_azimuth()  # Initialize azimuth (get from f and h)
         self._global_cp: CartesianCoord = self._calc_global_coord(self._local_point_cp)
         
@@ -73,7 +73,7 @@ class Vehicle:
         """
         new_azimut: float = self._global_a + local_coord.a
         cartesian_shift: CartesianCoord = CoordUtils.toCartesian(local_coord.d, new_azimut)
-        return self._global_f + cartesian_shift
+        return cartesian_shift + self._global_f 
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -98,7 +98,7 @@ class Vehicle:
         """
         Calculates the next point based on current location and steering angle
 
-        @param steering_angle: Steering angle in rad (negative=left, positive=right)
+        @param steering_angle: Steering angle in rad (negative=right, positive=left)
         @param simulation_step: Distance to drive per step (TODO: Calibrate)
         @return: All global vehicle coordinates (TODO: Are they needed?)
         """
