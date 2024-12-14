@@ -22,8 +22,11 @@
  ***************************************************************************/
 """
 from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon, QColor
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsPoint, QgsGeometry
+from qgis.gui import QgsRubberBand
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -31,6 +34,12 @@ from .resources import *
 from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
 import os.path
 
+# Import SweptPath code
+from threading import Thread
+import time
+from .vehicle import Vehicle
+from .coord import CartesianCoord
+from .controls import Controls
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -53,6 +62,12 @@ class QgisSweptPath:
         self.pluginIsActive = False
         self.dockwidget = None
 
+        # SweptPath fields
+        self._speed: float = 0.5
+        self._steering_angle: float = 0.0
+        self.simulation_running: bool = False
+        self._controls: Controls = None
+
 
     def run(self):
         """Run method that loads and starts the plugin"""
@@ -70,10 +85,12 @@ class QgisSweptPath:
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
+            # Signals
+            self.dockwidget.btnStartSimulation.clicked.connect(self.startSimulation)
+
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
-            
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
@@ -86,6 +103,10 @@ class QgisSweptPath:
             enabled_flag=True,
             add_to_toolbar=False,
             parent=self.iface.mainWindow())
+        
+        # Register controls (event filter)
+        self._register_controls()
+        
 
 
     def onClosePlugin(self):
@@ -102,6 +123,8 @@ class QgisSweptPath:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
+        # remove controls (event filter)
+        self._unregister_controls()
 
 
     def add_action(
@@ -176,3 +199,54 @@ class QgisSweptPath:
         self.actions.append(action)
 
         return action
+
+    def speed_up(self):
+        self._speed += 0.1
+        self.dockwidget.txtSpeed.setText(str(self._speed))
+
+    def speed_down(self):
+        self._speed -= 0.1
+        self.dockwidget.txtSpeed.setText(str(self._speed))
+
+    def steer_left(self):
+        self._steering_angle += 1 / 180 * 3.14159
+        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+    
+    def steer_right(self):
+        self._steering_angle -= 1 / 180 * 3.14159
+        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+    
+    def startSimulation(self):
+        self.vehicle = Vehicle()
+        self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
+
+        t = Thread(target=self.simulate, args=())
+        t.start()
+
+    def simulate(self):
+        self.simulation_running = True
+        points = []
+        for i in range(50):
+            self.vehicle.step(self._steering_angle, self._speed)
+            point = QgsPoint(self.vehicle._global_f.x, self.vehicle._global_f.y)
+            points.append(point)
+            time.sleep(0.5)
+
+        self.simulation_running = False
+
+        canvas = self.iface.mapCanvas()
+        polyline = QgsRubberBand(canvas, False)  # False = not a polygon
+        polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+        polyline.setColor(QColor(255, 0, 0))
+        polyline.setWidth(3)
+
+    
+    def _register_controls(self):
+        if not self._controls:
+            self._controls = Controls(self, self.iface.mapCanvas())
+            self.iface.mapCanvas().viewport().installEventFilter(self._controls)
+
+    def _unregister_controls(self):
+        if self._controls:
+            self.iface.mapCanvas().viewport().removeEventFilter(self._controls)
+            self._controls.deleteLater()

@@ -27,22 +27,38 @@
     <property name="bottomMargin">
      <number>5</number>
     </property>
+    <item row="1" column="0">
+     <widget class="QLabel" name="lblSteeringAngle">
+      <property name="text">
+       <string>Steering angle</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLineEdit" name="txtSteeringAngle"/>
+    </item>
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>5</number>
+     <widget class="QPushButton" name="btnStartSimulation">
+      <property name="text">
+       <string>Start simulation</string>
       </property>
-      <property name="sizeConstraint">
-       <enum>QLayout::SetDefaultConstraint</enum>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLineEdit" name="txtSpeed"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="lblSpeed">
+      <property name="text">
+       <string>Speed</string>
       </property>
-      <item>
-       <widget class="QPushButton" name="btnDigitise">
-        <property name="text">
-         <string>Digitise swept path</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+      <property name="alignment">
+       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
