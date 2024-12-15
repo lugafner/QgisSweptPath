@@ -6,15 +6,6 @@ class Controls(QObject):
        self._app = app
 
     def eventFilter(self, obj, event):
-        """ 
-        obj : QObject whose event is intercepted 
-        event: QEvent received
-        
-        returns:
-            bool: True to intercept the event, False to forward it
-        """
-
-
         if event.type() == QEvent.KeyRelease:
             print("pressed")
             if event.key() == Qt.Key_Up:
