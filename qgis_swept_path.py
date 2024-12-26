@@ -24,8 +24,8 @@
 from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon, QColor
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry
-from qgis.gui import QgsRubberBand
+from qgis.core import QgsPoint, QgsGeometry, Qgis
+from qgis.gui import QgsRubberBand, QgsGui
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -39,7 +39,6 @@ from threading import Thread
 import time
 from .vehicle import Vehicle
 from .coord import CartesianCoord
-from .controls import Controls
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -66,7 +65,6 @@ class QgisSweptPath:
         self._speed: float = 0.5
         self._steering_angle: float = 0.0
         self.simulation_running: bool = False
-        self._controls: Controls = None
 
 
     def run(self):
@@ -92,21 +90,27 @@ class QgisSweptPath:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
+    def setupControls(self):
+        """Adds all actions for the controls"""
+        # Actions
+        a_steer_left = self.add_action("Steer left", self.steer_left, parent=self.iface.mainWindow())
+        self.iface.registerMainWindowAction(a_steer_left, "Ctrl+I")
+        QgsGui.shortcutsManager().registerAction(a_steer_left)
+
+
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ':/plugins/qgis_swept_path/icon.png'
         self.add_action(
-            icon_path,
             text='QgisSweptPath',
             callback=self.run,
+            icon_path=icon_path,
             enabled_flag=True,
-            add_to_toolbar=False,
-            parent=self.iface.mainWindow())
-        
-        # Register controls (event filter)
-        self._register_controls()
-        
+            add_to_menu=True,
+            parent=self.iface.mainWindow())  
+
+        self.setupControls()      
 
 
     def onClosePlugin(self):
@@ -121,19 +125,18 @@ class QgisSweptPath:
         for action in self.actions:
             self.iface.removePluginMenu('QgisSweptPath', action)
             self.iface.removeToolBarIcon(action)
+            self.iface.unregisterMainWindowAction(action)
         # remove the toolbar
         del self.toolbar
-        # remove controls (event filter)
-        self._unregister_controls()
 
 
     def add_action(
         self,
-        icon_path,
         text,
         callback,
+        icon_path=None,
         enabled_flag=True,
-        add_to_menu=True,
+        add_to_menu=False,
         add_to_toolbar=False,
         status_tip=None,
         whats_this=None,
@@ -200,23 +203,39 @@ class QgisSweptPath:
 
         return action
 
+    def update_status(self):
+        if self.simulation_running:
+            self.dockwidget.lblStatus.setText("Simulation running")
+        # Add else if for more specific status
+        else:
+            self.dockwidget.lblStatus.setText("Status")
+
+    def update_speed(self):
+        self.dockwidget.txtSpeed.setText(str(self._speed))
+
+    def update_steering(self):
+        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+
     def speed_up(self):
         self._speed += 0.1
-        self.dockwidget.txtSpeed.setText(str(self._speed))
+        self.update_speed()
 
     def speed_down(self):
         self._speed -= 0.1
-        self.dockwidget.txtSpeed.setText(str(self._speed))
+        self.update_speed()
 
     def steer_left(self):
         self._steering_angle += 1 / 180 * 3.14159
-        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+        self.update_steering()
     
     def steer_right(self):
         self._steering_angle -= 1 / 180 * 3.14159
-        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+        self.update_steering()
     
     def startSimulation(self):
+        self.update_steering()
+        self.update_speed()
+        
         self.vehicle = Vehicle()
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
 
@@ -230,23 +249,16 @@ class QgisSweptPath:
             self.vehicle.step(self._steering_angle, self._speed)
             point = QgsPoint(self.vehicle._global_f.x, self.vehicle._global_f.y)
             points.append(point)
+
+            self.update_status()
             time.sleep(0.5)
 
         self.simulation_running = False
 
         canvas = self.iface.mapCanvas()
-        polyline = QgsRubberBand(canvas, False)  # False = not a polygon
+        polyline = QgsRubberBand(canvas, Qgis.GeometryType.Line)
         polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
         polyline.setColor(QColor(255, 0, 0))
         polyline.setWidth(3)
 
-    
-    def _register_controls(self):
-        if not self._controls:
-            self._controls = Controls(self, self.iface.mapCanvas())
-            self.iface.mapCanvas().viewport().installEventFilter(self._controls)
-
-    def _unregister_controls(self):
-        if self._controls:
-            self.iface.mapCanvas().viewport().removeEventFilter(self._controls)
-            self._controls.deleteLater()
+        self.update_status()
