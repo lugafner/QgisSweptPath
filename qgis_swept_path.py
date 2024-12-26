@@ -53,7 +53,7 @@ class QgisSweptPath:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = 'QgisSweptPath'
+        self.menu = "QgisSweptPath"
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar('QgisSweptPath')
         self.toolbar.setObjectName('QgisSweptPath')
@@ -62,9 +62,10 @@ class QgisSweptPath:
         self.dockwidget = None
 
         # SweptPath fields
-        self._speed: float = 0.5
-        self._steering_angle: float = 0.0
-        self.simulation_running: bool = False
+        self._simulation_step: float = 0.5  # Driving distance per step [m]
+        self._speed: float = 1.0  # Driving speed [m/s]
+        self._steering_angle: float = 0.0  # Steering angle [rad]
+        self.simulation_running: bool = False  # Simulation is running
 
 
     def run(self):
@@ -85,6 +86,7 @@ class QgisSweptPath:
 
             # Signals
             self.dockwidget.btnStartSimulation.clicked.connect(self.startSimulation)
+            self.dockwidget.btnStopSimulation.clicked.connect(self.stopSimulation)
 
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -93,17 +95,17 @@ class QgisSweptPath:
     def setupControls(self):
         """Adds all actions for the controls"""
         # Actions
-        a_steer_left = self.add_action("Steer left", self.steer_left, parent=self.iface.mainWindow())
-        self.iface.registerMainWindowAction(a_steer_left, "Ctrl+I")
-        QgsGui.shortcutsManager().registerAction(a_steer_left)
-
+        self.add_action("Steer left", self.steer_left, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+J", shortcuts_manager=True)
+        self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L", shortcuts_manager=True)
+        self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ", shortcuts_manager=True)
+        self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K", shortcuts_manager=True)
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/qgis_swept_path/icon.png'
+        icon_path = ":/plugins/qgis_swept_path/icon.png"
         self.add_action(
-            text='QgisSweptPath',
+            text="QgisSweptPath",
             callback=self.run,
             icon_path=icon_path,
             enabled_flag=True,
@@ -126,6 +128,7 @@ class QgisSweptPath:
             self.iface.removePluginMenu('QgisSweptPath', action)
             self.iface.removeToolBarIcon(action)
             self.iface.unregisterMainWindowAction(action)
+            QgsGui.shortcutsManager().unregisterAction(action)
         # remove the toolbar
         del self.toolbar
 
@@ -140,7 +143,9 @@ class QgisSweptPath:
         add_to_toolbar=False,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None, 
+        shortcut=None,
+        shortcuts_manager=False):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -175,6 +180,9 @@ class QgisSweptPath:
         :param whats_this: Optional text to show in the status bar when the
             mouse pointer hovers over the action.
 
+        :param shortcuts_manager: if the action should be listed in the shortcuts manager. Default False
+        :type shortcuts_manager: bool
+
         :returns: The action that was created. Note that the action is also
             added to self.actions list.
         :rtype: QAction
@@ -198,6 +206,12 @@ class QgisSweptPath:
             self.iface.addPluginToMenu(
                 self.menu,
                 action)
+        
+        if shortcut is not None:
+            self.iface.registerMainWindowAction(action, shortcut)
+            
+        if shortcuts_manager:
+            QgsGui.shortcutsManager().registerAction(action)
 
         self.actions.append(action)
 
@@ -232,28 +246,30 @@ class QgisSweptPath:
         self._steering_angle -= 1 / 180 * 3.14159
         self.update_steering()
     
+    def stopSimulation(self):
+        self.simulation_running = False
+
     def startSimulation(self):
         self.update_steering()
         self.update_speed()
         
         self.vehicle = Vehicle()
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
-
         t = Thread(target=self.simulate, args=())
+
+        self.simulation_running = True
         t.start()
 
     def simulate(self):
-        self.simulation_running = True
         points = []
-        for i in range(50):
-            self.vehicle.step(self._steering_angle, self._speed)
+        while self.simulation_running:
+            self.vehicle.step(self._steering_angle, self._simulation_step)
             point = QgsPoint(self.vehicle._global_f.x, self.vehicle._global_f.y)
             points.append(point)
 
             self.update_status()
-            time.sleep(0.5)
-
-        self.simulation_running = False
+            sleep_time = self._simulation_step / self._speed
+            time.sleep(sleep_time)
 
         canvas = self.iface.mapCanvas()
         polyline = QgsRubberBand(canvas, Qgis.GeometryType.Line)
