@@ -21,10 +21,10 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt
+from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt, QVariant
 from qgis.PyQt.QtGui import QIcon, QColor
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, Qgis
+from qgis.core import QgsPoint, QgsGeometry, Qgis, QgsField, QgsPointXY, QgsFeature
 from qgis.gui import QgsRubberBand, QgsGui
 
 # Initialize Qt resources from file resources.py
@@ -66,6 +66,14 @@ class QgisSweptPath:
         self._speed: float = 1.0  # Driving speed [m/s]
         self._steering_angle: float = 0.0  # Steering angle [rad]
         self.simulation_running: bool = False  # Simulation is running
+        self._simulation_id: str = ""  # Simulation ID for layer features identification
+        
+        self.vehicle: Vehicle = None  # The parent vehicle
+        self.vehicle_parts: list[Vehicle] = []  # All vehicles parts including parent
+
+        # Visualisation
+        self._vehicle_layer = None  # Layer to draw the vehicle during simulation
+
 
 
     def run(self):
@@ -87,6 +95,7 @@ class QgisSweptPath:
             # Signals
             self.dockwidget.btnStartSimulation.clicked.connect(self.startSimulation)
             self.dockwidget.btnStopSimulation.clicked.connect(self.stopSimulation)
+            self.dockwidget.btnAddLayers.clicked.connect(self._create_layers)
 
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -95,10 +104,14 @@ class QgisSweptPath:
     def setupControls(self):
         """Adds all actions for the controls"""
         # Actions
-        self.add_action("Steer left", self.steer_left, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+J", shortcuts_manager=True)
-        self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L", shortcuts_manager=True)
-        self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ", shortcuts_manager=True)
-        self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K", shortcuts_manager=True)
+        self.add_action("Steer left", self.steer_left, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+J")
+        self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L")
+        self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ")
+        self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K")
+
+        self.update_steering()
+        self.update_speed()
+
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
@@ -144,8 +157,7 @@ class QgisSweptPath:
         status_tip=None,
         whats_this=None,
         parent=None, 
-        shortcut=None,
-        shortcuts_manager=False):
+        shortcut=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -180,8 +192,8 @@ class QgisSweptPath:
         :param whats_this: Optional text to show in the status bar when the
             mouse pointer hovers over the action.
 
-        :param shortcuts_manager: if the action should be listed in the shortcuts manager. Default False
-        :type shortcuts_manager: bool
+        :param shortcut: Optional text for keyboard shortcut. Default None
+        :type shortcut: str
 
         :returns: The action that was created. Note that the action is also
             added to self.actions list.
@@ -209,10 +221,8 @@ class QgisSweptPath:
         
         if shortcut is not None:
             self.iface.registerMainWindowAction(action, shortcut)
-            
-        if shortcuts_manager:
             QgsGui.shortcutsManager().registerAction(action)
-
+            
         self.actions.append(action)
 
         return action
@@ -250,10 +260,9 @@ class QgisSweptPath:
         self.simulation_running = False
 
     def startSimulation(self):
-        self.update_steering()
-        self.update_speed()
-        
-        self.vehicle = Vehicle()
+        self._simulation_id = self.dockwidget.txtSimulationId.getText()
+
+        self._setup_vehicle()
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
         t = Thread(target=self.simulate, args=())
 
@@ -278,3 +287,33 @@ class QgisSweptPath:
         polyline.setWidth(3)
 
         self.update_status()
+
+
+    def _setup_vehicle(self):
+        # TODO: Select vehicles
+        self.vehicle = Vehicle()
+        self.vehicle_parts.append(self.vehicle)
+
+        self._draw_vehicle()
+
+        
+    def _draw_vehicle(self):
+        for v in self.vehicle_parts:
+            feature = QgsFeature()
+            feature["symbol"] = v._symbol
+            feature["rotation"] = v._calc_azimuth()
+            feature["offset_x"] = v._symbol_offset_x
+            feature["offset_y"] = v._symbol_offset_y
+            feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v._global_f.x, v._global_f.y)))
+            self._vehicle_layer.dataProvider().addFeatures([feature])
+
+
+    def _create_layers(self):
+        if self._vehicle_layer is None:
+            self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Float)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Float)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Float)])
+            self._vehicle_layer.updateFields()
+
