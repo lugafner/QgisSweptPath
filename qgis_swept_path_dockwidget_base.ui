@@ -27,13 +27,14 @@
     <property name="bottomMargin">
      <number>5</number>
     </property>
-    <item row="4" column="0">
-     <widget class="QLineEdit" name="txtSteeringAngle"/>
+    <item row="0" column="0">
+     <widget class="QPushButton" name="btnAddLayers">
+      <property name="text">
+       <string>Add Layers</string>
+      </property>
+     </widget>
     </item>
-    <item row="6" column="0">
-     <widget class="QLineEdit" name="txtSpeed"/>
-    </item>
-    <item row="5" column="0">
+    <item row="9" column="0">
      <widget class="QLabel" name="lblSpeed">
       <property name="text">
        <string>Speed</string>
@@ -43,17 +44,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="lblSteeringAngle">
-      <property name="text">
-       <string>Steering angle</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-      </property>
-     </widget>
+    <item row="10" column="0">
+     <widget class="QLineEdit" name="txtSpeed"/>
     </item>
-    <item row="2" column="0">
+    <item row="6" column="0">
      <widget class="QLabel" name="lblStatus">
       <property name="font">
        <font>
@@ -69,17 +63,50 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
+    <item row="8" column="0">
+     <widget class="QLineEdit" name="txtSteeringAngle"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="Line" name="line1">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="lblSteeringAngle">
+      <property name="text">
+       <string>Steering angle</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLineEdit" name="txtSimulationId"/>
+    </item>
+    <item row="4" column="0">
      <widget class="QPushButton" name="btnStartSimulation">
       <property name="text">
        <string>Start simulation</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
+    <item row="5" column="0">
      <widget class="QPushButton" name="btnStopSimulation">
       <property name="text">
        <string>Stop simulation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="lblSimulationId">
+      <property name="text">
+       <string>Simulation ID</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
       </property>
      </widget>
     </item>
