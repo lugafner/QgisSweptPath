@@ -16,14 +16,22 @@ class Vehicle:
         self._axle_with: Final[float] = 2.50  # meter
         # Steering
         self._max_steering_angle: Final[float] = 53.0 / 180 * 3.14159  # radian
+        
         # Trailer
         self._trailer: Final[Vehicle] = None
         # Connection point must always be initialised with a value
-        self._connection_point: Final[float] = 11.65
+        self._connection_point: Final[float] = 11.65  # meter from front
+        
         # Vehicle type (init with True for standard vehicle)
         self._has_body: bool = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
         self._has_front_axle: bool = True  # when false, no front axle will be drawn (i.e. semitrailer)
-        # TODO: Graphics
+        
+        # Graphics
+        self._symbol: Final[str] = "./vehicles/vehicle.svg"
+        self._symbol_scale: Final[float] = 100  # SVG units are 10mm (Factor 100 for meters)
+        # Offset to Place the symbol. Base point is point F. SVG base point is upper left. All in QGIS Style Units (normally meters)
+        self._symbol_offset_x: Final[float] = -12.5
+        self._symbol_offset_y: Final[float] = -1.25
         
         # Technical fields
         self._vehicle_is_placed: bool = False
