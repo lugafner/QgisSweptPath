@@ -299,6 +299,7 @@ class QgisSweptPath:
             feature = QgsFeature()
             feature["symbol"] = v.symbol
             feature["rotation"] = v.a
+            feature["scale"] = v.symbol_scale
             feature["offset_x"] = v.symbol_offset_x
             feature["offset_y"] = v.symbol_offset_y
             feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
@@ -310,6 +311,7 @@ class QgisSweptPath:
             self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
             self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Float)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("scale", QVariant.Float)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Float)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Float)])
             self._vehicle_layer.updateFields()
