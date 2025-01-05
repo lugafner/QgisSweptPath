@@ -272,7 +272,7 @@ class QgisSweptPath:
         points = []
         while self.simulation_running:
             self.vehicle.step(self._steering_angle, self._simulation_step)
-            point = QgsPoint(self.vehicle._global_f.x, self.vehicle._global_f.y)
+            point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
             points.append(point)
 
             self.update_status()
@@ -297,11 +297,11 @@ class QgisSweptPath:
     def _draw_vehicle(self):
         for v in self.vehicle.vehicle_parts:
             feature = QgsFeature()
-            feature["symbol"] = v._symbol
-            feature["rotation"] = v._calc_azimuth()
-            feature["offset_x"] = v._symbol_offset_x
-            feature["offset_y"] = v._symbol_offset_y
-            feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v._global_f.x, v._global_f.y)))
+            feature["symbol"] = v.symbol
+            feature["rotation"] = v.a
+            feature["offset_x"] = v.symbol_offset_x
+            feature["offset_y"] = v.symbol_offset_y
+            feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_layer.dataProvider().addFeatures([feature])
 
 
