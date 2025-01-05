@@ -68,8 +68,7 @@ class QgisSweptPath:
         self.simulation_running: bool = False  # Simulation is running
         self._simulation_id: str = ""  # Simulation ID for layer features identification
         
-        self.vehicle: Vehicle = None  # The parent vehicle
-        self.vehicle_parts: list[Vehicle] = []  # All vehicles parts including parent
+        self.vehicle: Vehicle = None  # The vehicle to simulate
 
         # Visualisation
         self._vehicle_layer = None  # Layer to draw the vehicle during simulation
@@ -290,15 +289,13 @@ class QgisSweptPath:
 
 
     def _setup_vehicle(self):
-        # TODO: Select vehicles
+        # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
         self.vehicle = Vehicle()
-        self.vehicle_parts.append(self.vehicle)
-
         self._draw_vehicle()
 
         
     def _draw_vehicle(self):
-        for v in self.vehicle_parts:
+        for v in self.vehicle.vehicle_parts:
             feature = QgsFeature()
             feature["symbol"] = v._symbol
             feature["rotation"] = v._calc_azimuth()
