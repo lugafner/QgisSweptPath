@@ -1,4 +1,5 @@
 import math
+import typing
 
 from typing import Final
 from .coord import PolarCoord, CartesianCoord, CoordUtils
@@ -17,14 +18,17 @@ class Vehicle:
         # Steering
         self._max_steering_angle: Final[float] = 53.0 / 180 * 3.14159  # radian
         
-        # Trailer
-        self._trailer: Final[Vehicle] = None
+        # Trailer and vehicle hirarchi
+        self._is_main_vehicle: Final[bool] = True # True for standard vehicle
+        self._trailer: Vehicle = None  # Init with False for standard vehicle
         # Connection point must always be initialised with a value
         self._connection_point: Final[float] = 11.65  # meter from front
+        # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
+        self._vehicle_parts: list[Vehicle] = []
         
         # Vehicle type (init with True for standard vehicle)
-        self._has_body: bool = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
-        self._has_front_axle: bool = True  # when false, no front axle will be drawn (i.e. semitrailer)
+        self._has_body: Final[bool] = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
+        self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
         
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
@@ -37,8 +41,12 @@ class Vehicle:
         self._vehicle_is_placed: bool = False
         self._do_drawing: bool = True
 
+        # Update the vehicle parts list
+        self._update_vehicle_parts()
+
         # Setup vehicle shape
         self._init_vehicle_shape()
+
 
     def _init_vehicle_shape(self):
         # Vehicle local crs (polar from F)
@@ -83,6 +91,19 @@ class Vehicle:
         # self._global_cp: CartesianCoord = self._calc_global_coord(self._local_point_cp)
         
 
+    def _update_vehicle_parts(self):
+        """
+        Updates the vehicle parts list when the vehicle is a main vehicle
+        Method is only called when creating the vehicle and when a trailer is added
+        """    
+        if self._is_main_vehicle:
+            self._vehicle_parts = [self]
+            child_vehicle = self._trailer
+            while child_vehicle is not None:
+                self._vehicle_parts.append(child_vehicle)
+                child_vehicle = child_vehicle._trailer
+
+
     def _calc_azimuth(self) -> float:
         """Calculates the azimut of the vehicle based on the points f and h
 
@@ -91,6 +112,7 @@ class Vehicle:
         dx = self._global_f.x - self._global_h.x
         dy = self._global_f.y - self._global_h.y
         return math.atan2(dy, dx)
+
 
     def _calc_global_coord(self, local_coord: PolarCoord) -> CartesianCoord:
         """
@@ -104,9 +126,11 @@ class Vehicle:
         cartesian_shift: CartesianCoord = CoordUtils.toCartesian(local_coord.d, new_azimut)
         return cartesian_shift + self._global_f 
     
+
     def _draw(self):
         if self._has_body: self._draw_body()
         if self._has_front_axle: self._draw_front_axle()
+
 
     def _draw_body(self):
         self._global_bl: CartesianCoord = self._calc_global_coord(self._local_point_bl)
@@ -116,9 +140,11 @@ class Vehicle:
         self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
         self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
 
+
     def _draw_front_axle(self):
         self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
+
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -166,6 +192,7 @@ class Vehicle:
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
 
+
     def step_trailer(self, connection_point:CartesianCoord):
         """
         Simulate the movement of a trailer based on connection point
@@ -184,4 +211,40 @@ class Vehicle:
         # Simulate trailer
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
-           
+
+
+    # Properties
+    @property
+    def do_drawing(self) -> bool:
+        """
+        Specifie if the vehicle body should be drawn
+        For normal vehicle parts set to True (default). False only used i.e. for drawbar
+        """
+        return self._do_drawing
+    
+    @do_drawing.setter
+    def do_drawing(self, v: bool):
+        self._do_drawing = v
+
+    @property
+    def trailer(self) -> typing.Self:
+        """
+        Trailer. Child vehicle object.
+        If the Vehicle has no trailer parts. The value is None
+        """
+        return self._trailer
+    
+    @trailer.setter
+    def trailer(self, v: typing.Self):
+        self._trailer = v
+        # After a trailer is added. The list with all vehicle parts will be updated
+        self._update_vehicle_parts()
+
+    @property
+    def vehicle_parts(self) -> list[typing.Self]:
+        """
+        Only set on main vehicles (None for child vehicles i.e. trailers)
+        First value is the main vehicle itself. After that all parts (even child of child) are stored
+        List is used to draw the entire vehicle in a loop
+        """
+        return self._vehicle_parts
