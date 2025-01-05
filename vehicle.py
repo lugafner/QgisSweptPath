@@ -248,3 +248,84 @@ class Vehicle:
         List is used to draw the entire vehicle in a loop
         """
         return self._vehicle_parts
+
+    @property
+    def f(self) -> CartesianCoord:
+        """Global Coordinate of point f"""
+        return self._global_f
+
+    @property
+    def h(self) -> CartesianCoord:
+        """Global Coordinate of point h"""
+        return self._global_h
+
+    @property
+    def a(self) -> float:
+        """Vehicle azimut in rad"""
+        return self._global_a
+
+    @property
+    def bl(self) -> CartesianCoord:
+        """Global Coordinate of point bl"""
+        return self._global_bl
+
+    @property
+    def rwl(self) -> CartesianCoord:
+        """Global Coordinate of point rwl"""
+        return self._global_rwl
+
+    @property
+    def fwl(self) -> CartesianCoord:
+        """Global Coordinate of point fwl"""
+        return self._global_fwl
+
+    @property
+    def fl(self) -> CartesianCoord:
+        """Global Coordinate of point fl"""
+        return self._global_fl
+
+    @property
+    def br(self) -> CartesianCoord:
+        """Global Coordinate of point br"""
+        return self._global_br
+
+    @property
+    def rwr(self) -> CartesianCoord:
+        """Global Coordinate of point rwr"""
+        return self._global_rwr
+
+    @property
+    def fwr(self) -> CartesianCoord:
+        """Global Coordinate of point fwr"""
+        return self._global_fwr
+
+    @property
+    def fr(self) -> CartesianCoord:
+        """Global Coordinate of point fr"""
+        return self._global_fr
+
+    @property
+    def cp(self) -> CartesianCoord:
+        """Global Coordinate of point cp"""
+        return self._global_cp
+
+    @property
+    def symbol(self) -> str:
+        """The path to the symbol used for drawing"""
+        return self._symbol
+    
+    @property
+    def symbol_offset_x(self) -> float:
+        """
+        Symbol offset x to place the symbol based on point f
+        Value is in QGIS style units (normally meters)
+        """
+        return self._symbol_offset_x
+
+    @property
+    def symbol_offset_y(self) -> float:
+        """
+        Symbol offset y to place the symbol based on point f
+        Value is in QGIS style units (normally meters)
+        """
+        return self._symbol_offset_y
