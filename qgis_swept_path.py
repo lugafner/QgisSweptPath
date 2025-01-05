@@ -96,6 +96,9 @@ class QgisSweptPath:
             self.dockwidget.btnStopSimulation.clicked.connect(self.stopSimulation)
             self.dockwidget.btnAddLayers.clicked.connect(self._create_layers)
 
+            # Setup Controls
+            self.setupControls()
+
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
@@ -122,9 +125,7 @@ class QgisSweptPath:
             icon_path=icon_path,
             enabled_flag=True,
             add_to_menu=True,
-            parent=self.iface.mainWindow())  
-
-        self.setupControls()      
+            parent=self.iface.mainWindow())      
 
 
     def onClosePlugin(self):
@@ -310,9 +311,8 @@ class QgisSweptPath:
         if self._vehicle_layer is None:
             self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
             self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Float)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("scale", QVariant.Float)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Float)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Float)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Double)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("scale", QVariant.Double)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Double)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Double)])
             self._vehicle_layer.updateFields()
-
