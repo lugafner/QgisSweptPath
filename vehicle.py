@@ -1,5 +1,4 @@
 import math
-import typing
 
 from typing import Final
 from .coord import PolarCoord, CartesianCoord, CoordUtils
@@ -227,7 +226,7 @@ class Vehicle:
         self._do_drawing = v
 
     @property
-    def trailer(self) -> typing.Self:
+    def trailer(self):  # -> typing.Self Annotation removed for backward compatibility with Python 3.9
         """
         Trailer. Child vehicle object.
         If the Vehicle has no trailer parts. The value is None
@@ -235,13 +234,13 @@ class Vehicle:
         return self._trailer
     
     @trailer.setter
-    def trailer(self, v: typing.Self):
+    def trailer(self, v):  # v:typing.Self Annotation removed for backward compatibility with Python 3.9
         self._trailer = v
         # After a trailer is added. The list with all vehicle parts will be updated
         self._update_vehicle_parts()
 
     @property
-    def vehicle_parts(self) -> list[typing.Self]:
+    def vehicle_parts(self):  # -> list[typing.Self] Annotation removed for backward compatibility with Python 3.9
         """
         Only set on main vehicles (None for child vehicles i.e. trailers)
         First value is the main vehicle itself. After that all parts (even child of child) are stored
