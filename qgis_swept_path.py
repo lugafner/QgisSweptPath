@@ -260,10 +260,12 @@ class QgisSweptPath:
         self.simulation_running = False
 
     def startSimulation(self):
-        self._simulation_id = self.dockwidget.txtSimulationId.getText()
+        self._simulation_id = self.dockwidget.txtSimulationId.text()
 
         self._setup_vehicle()
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
+        self._draw_vehicle()
+
         t = Thread(target=self.simulate, args=())
 
         self.simulation_running = True
@@ -288,16 +290,13 @@ class QgisSweptPath:
 
         self.update_status()
 
-
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
         self.vehicle = Vehicle()
-        self._draw_vehicle()
-
         
     def _draw_vehicle(self):
         for v in self.vehicle.vehicle_parts:
-            feature = QgsFeature()
+            feature = QgsFeature(self._vehicle_layer.fields())
             feature["symbol"] = v.symbol
             feature["rotation"] = v.a
             feature["size_x"] = v.symbol_size_x
@@ -311,6 +310,10 @@ class QgisSweptPath:
     def _create_layers(self):
         if self._vehicle_layer is None:
             self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
+            crs = self._vehicle_layer.crs()
+            crs.createFromId(2056)
+            self._vehicle_layer.setCrs(crs)
+            
             self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Double)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("size_x", QVariant.Double)])
