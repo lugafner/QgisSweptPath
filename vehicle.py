@@ -31,7 +31,8 @@ class Vehicle:
         
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
-        self._symbol_scale: Final[float] = 100  # SVG units are 10mm (Factor 100 for meters)
+        self._symbol_size_x: Final[float] = 15.0 # SVG symbol size x in QGIS style units (usually meters)
+        self._symbol_size_y: Final[float] = 2.5  # SVG symbol size y in QGIS style units (usually meters)
         # Offset to Place the symbol. Base point is point F. SVG base point is upper left. All in QGIS Style Units (normally meters)
         self._symbol_offset_x: Final[float] = -12.5
         self._symbol_offset_y: Final[float] = -1.25
@@ -314,12 +315,20 @@ class Vehicle:
         return self._symbol
     
     @property
-    def symbol_scale(self) -> float:
+    def symbol_size_x(self) -> float:
         """
-        The factor to scale the svg immage for drawing
-        i.e. SVG units are 10mm (Factor 100 for meters in QGIS style units)
+        The x size of the svg symbol in QGIS style units
+        x represents the vehicle length
         """
-        return self._symbol_scale
+        return self._symbol_size_x
+    
+    @property
+    def symbol_size_y(self) -> float:
+        """
+        The y size of the svg symbol in QGIS style units
+        y represents the vehicle width
+        """
+        return self._symbol_size_y
     
     @property
     def symbol_offset_x(self) -> float:
