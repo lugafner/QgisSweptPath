@@ -10,10 +10,10 @@
     <g>
         <rect 
             class="body"
-            x="1mm"
-            y="1mm"
-            width="148mm" 
-            height="23mm"
+            x="2mm"
+            y="2mm"
+            width="146mm"
+            height="21mm"
             rx="1mm"
         />
     </g>
