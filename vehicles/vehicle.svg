@@ -1,4 +1,12 @@
 <svg width="150mm" height="25mm" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .body {
+            stroke-width: 1mm;
+            stroke: black;
+            fill: white;
+        }
+    </style>
+
     <g>
         <rect 
             class="body"
@@ -9,12 +17,4 @@
             rx="1mm"
         />
     </g>
-
-    <style>
-        .body {
-            stroke-width: 1mm;
-            stroke: black;
-            fill: none;
-        }
-    </style>
 </svg>
