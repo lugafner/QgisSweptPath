@@ -250,11 +250,15 @@ class QgisSweptPath:
         self.update_speed()
 
     def steer_left(self):
-        self._steering_angle += 1 / 180 * 3.14159
+        new_angle = self._steering_angle + 1 / 180 * 3.14159
+        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
+            self._steering_angle = new_angle
         self.update_steering()
     
     def steer_right(self):
-        self._steering_angle -= 1 / 180 * 3.14159
+        new_angle = self._steering_angle - 1 / 180 * 3.14159
+        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
+            self._steering_angle = new_angle
         self.update_steering()
     
     def stopSimulation(self):

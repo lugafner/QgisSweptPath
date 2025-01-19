@@ -28,7 +28,7 @@ class Vehicle:
         # Vehicle type (init with True for standard vehicle)
         self._has_body: Final[bool] = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
         self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
-        
+
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
         self._symbol_size_x: Final[float] = 15.0 # SVG symbol size x in QGIS style units (usually meters)
@@ -345,3 +345,10 @@ class Vehicle:
         Value is in QGIS style units (normally meters)
         """
         return self._symbol_offset_y
+
+    @property
+    def max_steering_angle(self) -> float:
+        """
+        The maximum possible steering angle of the steered front axle in radians
+        """
+        return self._max_steering_angle
