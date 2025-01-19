@@ -38,7 +38,7 @@ import os.path
 from threading import Thread
 import time
 from .vehicle import Vehicle
-from .coord import CartesianCoord
+from .coord import CartesianCoord, CoordUtils
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -62,7 +62,7 @@ class QgisSweptPath:
         self.dockwidget = None
 
         # SweptPath fields
-        self._simulation_step: float = 0.5  # Driving distance per step [m]
+        self._simulation_step: float = 0.1  # Driving distance per step [m]
         self._speed: float = 1.0  # Driving speed [m/s]
         self._steering_angle: float = 0.0  # Steering angle [rad]
         self.simulation_running: bool = False  # Simulation is running
@@ -277,6 +277,7 @@ class QgisSweptPath:
             self.vehicle.step(self._steering_angle, self._simulation_step)
             point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
             points.append(point)
+            self._draw_vehicle()
 
             self.update_status()
             sleep_time = self._simulation_step / self._speed
@@ -295,10 +296,11 @@ class QgisSweptPath:
         self.vehicle = Vehicle()
         
     def _draw_vehicle(self):
+        self._vehicle_layer.dataProvider().truncate()
         for v in self.vehicle.vehicle_parts:
             feature = QgsFeature(self._vehicle_layer.fields())
             feature["symbol"] = v.symbol
-            feature["rotation"] = v.a
+            feature["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
             feature["size_x"] = v.symbol_size_x
             feature["size_y"] = v.symbol_size_y
             feature["offset_x"] = v.symbol_offset_x
@@ -306,6 +308,7 @@ class QgisSweptPath:
             feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_layer.dataProvider().addFeatures([feature])
 
+        self._vehicle_layer.triggerRepaint()
 
     def _create_layers(self):
         if self._vehicle_layer is None:
