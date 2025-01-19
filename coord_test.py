@@ -8,10 +8,10 @@ class TestCoordConversion(unittest.TestCase):
         coord3q = CartesianCoord(-3, -3)
         coord4q = CartesianCoord(-3 ,3)
 
-        self.assertEqual(coord1q.toPolar().toCartesian(), coord1q)
-        self.assertEqual(coord2q.toPolar().toCartesian(), coord2q)
-        self.assertEqual(coord3q.toPolar().toCartesian(), coord3q)
-        self.assertEqual(coord4q.toPolar().toCartesian(), coord4q)
+        self.assertEqual(coord1q.to_polar().to_cartesian(), coord1q)
+        self.assertEqual(coord2q.to_polar().to_cartesian(), coord2q)
+        self.assertEqual(coord3q.to_polar().to_cartesian(), coord3q)
+        self.assertEqual(coord4q.to_polar().to_cartesian(), coord4q)
 
 
 class TestCoordCalculations(unittest.TestCase):

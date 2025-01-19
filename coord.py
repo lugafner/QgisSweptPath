@@ -13,8 +13,8 @@ class PolarCoord:
     def __str__(self):
         return f"d = {self.d}, a = {self.a}"
 
-    def toCartesian(self):
-        return CoordUtils.toCartesian(self.d, self.a)
+    def to_cartesian(self):
+        return CoordUtils.to_cartesian(self.d, self.a)
 
     @property
     def d(self):
@@ -39,7 +39,7 @@ class CartesianCoord:
         return f"x = {self.x}, y = {self.y}"
 
     def __add__(self, value):
-        if (isinstance(value, CartesianCoord)):
+        if isinstance(value, CartesianCoord):
             return CartesianCoord(
                 x=self._x + value.x,
                 y=self._y + value.y
@@ -48,7 +48,7 @@ class CartesianCoord:
             raise TypeError(f"The object {value} is not a {type(self)}.")
         
     def __sub__(self, value):
-        if (isinstance(value, CartesianCoord)):
+        if isinstance(value, CartesianCoord):
             return CartesianCoord(
                 x=self._x - value.x,
                 y=self._y - value.y
@@ -56,8 +56,8 @@ class CartesianCoord:
         else:
             raise TypeError(f"The object {value} is not a {type(self)}.")
 
-    def toPolar(self):
-        return CoordUtils.toPolar(self.x, self.y)
+    def to_polar(self):
+        return CoordUtils.to_polar(self.x, self.y)
 
     @property
     def x(self):
@@ -74,7 +74,7 @@ class CoordUtils:
         pass
 
     @staticmethod
-    def toPolar(dx: float, dy: float) -> PolarCoord:
+    def to_polar(dx: float, dy: float) -> PolarCoord:
         """Creates a polar coordinat from delta x and delta y
 
         @param dx: Delta x
@@ -86,7 +86,7 @@ class CoordUtils:
             d=math.sqrt(dx**2 + dy**2))
     
     @staticmethod
-    def toCartesian(d: float, a: float) -> CartesianCoord:
+    def to_cartesian(d: float, a: float) -> CartesianCoord:
         """Creates a cartesian coordinate from a distance and angle
 
         @param d: Distance
@@ -96,3 +96,21 @@ class CoordUtils:
         return CartesianCoord(
             x=d * math.cos(a),
             y=d * math.sin(a))
+
+    @staticmethod
+    def rad_to_degrees(a: float) -> float:
+        """ Converts radians into degrees. This function keeps the sign.
+
+        @param a: Angle in radians
+        @return Angel in degrees
+        """
+        return a * 180.0 / math.pi
+
+    @staticmethod
+    def degrees_to_rad(a: float) -> float:
+        """ Converts degrees into radians. This function keeps the sign.
+
+        @param a: Angle in degrees
+        @return Angle in radians
+        """
+        return a * math.pi / 180.0
