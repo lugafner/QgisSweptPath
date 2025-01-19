@@ -293,7 +293,9 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
+        trailer = Vehicle()
         self.vehicle = Vehicle()
+        self.vehicle.trailer = trailer
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
