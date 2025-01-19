@@ -24,7 +24,7 @@
 from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt, QVariant
 from qgis.PyQt.QtGui import QIcon, QColor
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, Qgis, QgsField, QgsPointXY, QgsFeature
+from qgis.core import QgsPoint, QgsGeometry, Qgis, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer
 from qgis.gui import QgsRubberBand, QgsGui
 
 # Initialize Qt resources from file resources.py
@@ -62,7 +62,7 @@ class QgisSweptPath:
         self.dockwidget = None
 
         # SweptPath fields
-        self._simulation_step: float = 0.1  # Driving distance per step [m]
+        self._simulation_step: float = 0.05  # Driving distance per step [m]
         self._speed: float = 1.0  # Driving speed [m/s]
         self._steering_angle: float = 0.0  # Steering angle [rad]
         self.simulation_running: bool = False  # Simulation is running
@@ -71,7 +71,8 @@ class QgisSweptPath:
         self.vehicle: Vehicle = None  # The vehicle to simulate
 
         # Visualisation
-        self._vehicle_layer = None  # Layer to draw the vehicle during simulation
+        self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
+        self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
 
 
 
@@ -264,7 +265,7 @@ class QgisSweptPath:
 
         self._setup_vehicle()
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
-        self._draw_vehicle()
+        self._create_vehicle_drawing()
 
         t = Thread(target=self.simulate, args=())
 
@@ -299,6 +300,15 @@ class QgisSweptPath:
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
+        for v, f in self._vehicle_features.items():
+            f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+            self._vehicle_layer.dataProvider().addFeatures([f])
+
+        self._vehicle_layer.triggerRepaint()
+
+    def _create_vehicle_drawing(self):
+        self._vehicle_layer.dataProvider().truncate()
         for v in self.vehicle.vehicle_parts:
             feature = QgsFeature(self._vehicle_layer.fields())
             feature["symbol"] = v.symbol
@@ -308,6 +318,8 @@ class QgisSweptPath:
             feature["offset_x"] = v.symbol_offset_x
             feature["offset_y"] = v.symbol_offset_y
             feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+            self._vehicle_features[v] = feature
+
             self._vehicle_layer.dataProvider().addFeatures([feature])
 
         self._vehicle_layer.triggerRepaint()

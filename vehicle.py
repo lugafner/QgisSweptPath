@@ -170,12 +170,12 @@ class Vehicle:
         self._vehicle_is_placed = True
 
 
-    def step(self, steering_angle:float, simulation_step:float=0.1):
+    def step(self, steering_angle:float, simulation_step:float=0.05):
         """
         Calculates the next point based on current location and steering angle
 
         @param steering_angle: Steering angle in rad (negative=right, positive=left)
-        @param simulation_step: Distance to drive per step (TODO: Calibrate)
+        @param simulation_step: Distance to drive per step
         @return: All global vehicle coordinates (TODO: Are they needed?)
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
