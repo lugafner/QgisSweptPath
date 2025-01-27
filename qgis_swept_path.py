@@ -306,6 +306,7 @@ class QgisSweptPath:
         self._vehicle_layer.dataProvider().truncate()
         for v, f in self._vehicle_features.items():
             f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+            f["wheel_angle"] = 0.0  # TODO: Get wheel angle from vehicle
             f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_layer.dataProvider().addFeatures([f])
 
@@ -321,6 +322,8 @@ class QgisSweptPath:
             feature["size_y"] = v.symbol_size_y
             feature["offset_x"] = v.symbol_offset_x
             feature["offset_y"] = v.symbol_offset_y
+            feature["wheel_angle"] = 0.0  # TODO: Get wheel angle from vehicle
+            feature["wheel_side_offset"] = v.wheel_side_offset
             feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_features[v] = feature
 
@@ -341,4 +344,6 @@ class QgisSweptPath:
             self._vehicle_layer.dataProvider().addAttributes([QgsField("size_y", QVariant.Double)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Double)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Double)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_angle", QVariant.Double)])
+            self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_side_offset", QVariant.Double)])
             self._vehicle_layer.updateFields()
