@@ -62,9 +62,6 @@ class QgisSweptPath:
         self.dockwidget = None
 
         # SweptPath fields
-        self._simulation_step: float = 0.05  # Driving distance per step [m]
-        self._speed: float = 1.0  # Driving speed [m/s]
-        self._steering_angle: float = 0.0  # Steering angle [rad]
         self.simulation_running: bool = False  # Simulation is running
         self._simulation_id: str = ""  # Simulation ID for layer features identification
         
@@ -73,8 +70,6 @@ class QgisSweptPath:
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
-
-
 
     def run(self):
         """Run method that loads and starts the plugin"""
@@ -111,10 +106,6 @@ class QgisSweptPath:
         self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L")
         self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ")
         self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K")
-
-        self.update_steering()
-        self.update_speed()
-
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
@@ -236,29 +227,25 @@ class QgisSweptPath:
             self.dockwidget.lblStatus.setText("Status")
 
     def update_speed(self):
-        self.dockwidget.txtSpeed.setText(str(self._speed))
+        self.dockwidget.txtSpeed.setText(str(self.vehicle.speed))
 
     def update_steering(self):
-        self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
+        self.dockwidget.txtSteeringAngle.setText(str(self.vehicle.steering_angle / 3.14159 * 180))
 
     def speed_up(self):
-        self._speed += 0.1
+        self.vehicle.speed_up()
         self.update_speed()
 
     def speed_down(self):
-        self._speed -= 0.1
+        self.vehicle.speed_down()
         self.update_speed()
 
     def steer_left(self):
-        new_angle = self._steering_angle + 1 / 180 * 3.14159
-        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
-            self._steering_angle = new_angle
+        self.vehicle.steer_left()
         self.update_steering()
     
     def steer_right(self):
-        new_angle = self._steering_angle - 1 / 180 * 3.14159
-        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
-            self._steering_angle = new_angle
+        self.vehicle.steer_right()
         self.update_steering()
     
     def stopSimulation(self):
@@ -271,6 +258,9 @@ class QgisSweptPath:
         self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
         self._create_vehicle_drawing()
 
+        self.update_steering()
+        self.update_speed()
+
         t = Thread(target=self.simulate, args=())
 
         self.simulation_running = True
@@ -279,14 +269,13 @@ class QgisSweptPath:
     def simulate(self):
         points = []
         while self.simulation_running:
-            self.vehicle.step(self._steering_angle, self._simulation_step)
+            self.vehicle.step()
             point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
             points.append(point)
             self._draw_vehicle()
 
             self.update_status()
-            sleep_time = self._simulation_step / self._speed
-            time.sleep(sleep_time)
+            time.sleep(self.vehicle.iteration_break)
 
         canvas = self.iface.mapCanvas()
         polyline = QgsRubberBand(canvas, Qgis.GeometryType.Line)
