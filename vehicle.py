@@ -15,9 +15,9 @@ class Vehicle:
         self._rear_axle_ref_pos: Final[float] = 11.65  # meter from front
         self._axle_with: Final[float] = 2.50  # meter
         # Steering
-        self._max_steering_angle: Final[float] = 53.0 / 180 * 3.14159  # radian
+        self._max_steering_angle: Final[float] = 53.0 / 180 * math.pi  # radian
         
-        # Trailer and vehicle hirarchi
+        # Trailer and vehicle hierarchy
         self._is_main_vehicle: Final[bool] = True # True for standard vehicle
         self._trailer: Vehicle = None  # Init with False for standard vehicle
         # Connection point must always be initialised with a value
@@ -28,6 +28,10 @@ class Vehicle:
         # Vehicle type (init with True for standard vehicle)
         self._has_body: Final[bool] = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
         self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
+
+        # Driving
+        self._speed: float = 1.0
+        self._steering_angle: float = 0.0
 
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
@@ -40,6 +44,12 @@ class Vehicle:
         # Technical fields
         self._vehicle_is_placed: bool = False
         self._do_drawing: bool = True
+        self._speed_up_steps: float = 0.1  # Increase speed in m/s with each input
+        self._speed_down_steps: float = 0.1  # Decrease speed in m/s with each input
+        self._steer_in_steps: float = 1.0 / 180 * math.pi  # Turn in wheels with each input in rad
+        self._steer_back_steps: float = 1.0 / 180 * math.pi  # Turn back wheels with each input in rad
+        self._simulation_step: float = 0.05  # Distance to drive with each simulation step in m
+        self._iteration_break: float = self._simulation_step / self._speed  # Break time between simulation steps (init with none for trailers)
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -140,11 +150,12 @@ class Vehicle:
         self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
         self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
 
-
     def _draw_front_axle(self):
         self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
+    def _update_iteration_break(self):
+        self._iteration_break = abs(self._simulation_step / self._speed)
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -170,16 +181,14 @@ class Vehicle:
         self._vehicle_is_placed = True
 
 
-    def step(self, steering_angle:float, simulation_step:float=0.05):
+    def step(self):
         """
         Calculates the next point based on current location and steering angle
-
-        @param steering_angle: Steering angle in rad (negative=right, positive=left)
-        @param simulation_step: Distance to drive per step
-        @return: All global vehicle coordinates (TODO: Are they needed?)
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
-        driving_vector = PolarCoord(simulation_step, steering_angle)
+
+        # Use current steering angle and simulation step
+        driving_vector = PolarCoord(self._simulation_step, self._steering_angle)
         self._global_f = self._calc_global_coord(driving_vector)
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_h)
@@ -192,12 +201,11 @@ class Vehicle:
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
 
-
     def step_trailer(self, connection_point:CartesianCoord):
         """
         Simulate the movement of a trailer based on connection point
         The connection point from the parent vehicle ist the reference point f of the trailer
-        
+
         @param connection_point: Global cartesian coordinate of the connection point
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
@@ -212,6 +220,27 @@ class Vehicle:
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
 
+    def speed_up(self):
+        """Increase vehicle speed"""
+        self._speed += self._speed_up_steps
+        self._update_iteration_break()  # Recalculate the break time between the simulation steps
+
+    def speed_down(self):
+        """Decrease vehicle speed"""
+        self._speed -= self._speed_down_steps
+        self._update_iteration_break()  # Recalculate the break time between the simulation steps
+
+    def steer_left(self):
+        """Increase wheel angle, if the max steering angle is not exceeded"""
+        new_angle = self._steering_angle + (self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps)
+        if self._max_steering_angle >= new_angle:
+            self._steering_angle = new_angle
+
+    def steer_right(self):
+        """Increase wheel angle, if the max steering angle is not exceeded"""
+        new_angle = self._steering_angle - (self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps)
+        if self._max_steering_angle * -1 <= new_angle:
+            self._steering_angle = new_angle
 
     # Properties
     @property
@@ -248,6 +277,31 @@ class Vehicle:
         List is used to draw the entire vehicle in a loop
         """
         return self._vehicle_parts
+
+    @property
+    def speed(self) -> float:
+        """Current speed in m/s"""
+        return self._speed
+
+    @property
+    def steering_angle(self) -> float:
+        """Current wheel angle in radians"""
+        return self._steering_angle
+
+    @property
+    def simulation_step(self) -> float:
+        """Driving distance with each simulation step in meters"""
+        return self._simulation_step
+
+    @simulation_step.setter
+    def simulation_step(self, v:float):
+        """Set distance to drive with each simulation step in meters"""
+        self._simulation_step = v
+
+    @property
+    def iteration_break(self) -> float:
+        """Time between simulation steps in seconds"""
+        return self._iteration_break
 
     @property
     def f(self) -> CartesianCoord:
