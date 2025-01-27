@@ -353,3 +353,10 @@ class Vehicle:
         The maximum possible steering angle of the steered front axle in radians
         """
         return self._max_steering_angle
+
+    @property
+    def wheel_side_offset(self) -> float:
+        """
+        The side offset of the wheels from the center axe x (always positive)
+        """
+        return self._wheel_side_offset
