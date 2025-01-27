@@ -275,14 +275,13 @@ class QgisSweptPath:
     def simulate(self):
         points = []
         while self.simulation_running:
-            self.vehicle.step(self._steering_angle, self._simulation_step)
+            self.vehicle.step()
             point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
             points.append(point)
             self._draw_vehicle()
 
             self.update_status()
-            sleep_time = self._simulation_step / self._speed
-            time.sleep(sleep_time)
+            time.sleep(self.vehicle.iteration_break)
 
         canvas = self.iface.mapCanvas()
         polyline = QgsRubberBand(canvas, Qgis.GeometryType.Line)
