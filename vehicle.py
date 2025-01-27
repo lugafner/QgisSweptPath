@@ -36,6 +36,8 @@ class Vehicle:
         # Offset to Place the symbol. Base point is point F. SVG base point is upper left. All in QGIS Style Units (normally meters)
         self._symbol_offset_x: Final[float] = -12.5
         self._symbol_offset_y: Final[float] = -1.25
+        # Displaying steered wheels
+        self._wheel_side_offset: float = self._axle_with / 2
         
         # Technical fields
         self._vehicle_is_placed: bool = False
@@ -70,18 +72,17 @@ class Vehicle:
         if self._has_body:
             back_distanz: float = self._body_length - self._front_axle_ref_pos
             body_side_offset: float = self._body_width / 2
-            wheel_side_offset: float = self._axle_with / 2
 
             self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distanz, body_side_offset)
-            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- wheelbase, wheel_side_offset)
+            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- wheelbase, self._wheel_side_offset)
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
             self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distanz, - body_side_offset)
-            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- wheelbase, - wheel_side_offset)
-            self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - wheel_side_offset)
+            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- wheelbase, - self._wheel_side_offset)
+            self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - self._wheel_side_offset)
 
         if self._has_body and self._has_front_axle:
-            self._local_point_fwl: PolarCoord = CoordUtils.to_polar(0.0, wheel_side_offset)
-            self._local_point_fwr: PolarCoord = CoordUtils.to_polar(0.0, - wheel_side_offset)
+            self._local_point_fwl: PolarCoord = CoordUtils.to_polar(0.0, self._wheel_side_offset)
+            self._local_point_fwr: PolarCoord = CoordUtils.to_polar(0.0, - self._wheel_side_offset)
 
         # TODO: Remove, if the vehicle is always placed first
         # Initialise Fehicle position
