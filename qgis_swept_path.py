@@ -242,23 +242,19 @@ class QgisSweptPath:
         self.dockwidget.txtSteeringAngle.setText(str(self._steering_angle / 3.14159 * 180))
 
     def speed_up(self):
-        self._speed += 0.1
+        self.vehicle.speed_up()
         self.update_speed()
 
     def speed_down(self):
-        self._speed -= 0.1
+        self.vehicle.speed_down()
         self.update_speed()
 
     def steer_left(self):
-        new_angle = self._steering_angle + 1 / 180 * 3.14159
-        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
-            self._steering_angle = new_angle
+        self.vehicle.steer_left()
         self.update_steering()
     
     def steer_right(self):
-        new_angle = self._steering_angle - 1 / 180 * 3.14159
-        if self.vehicle.max_steering_angle >= new_angle >= self.vehicle.max_steering_angle * -1:
-            self._steering_angle = new_angle
+        self.vehicle.steer_right()
         self.update_steering()
     
     def stopSimulation(self):
