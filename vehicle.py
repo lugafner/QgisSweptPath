@@ -155,7 +155,7 @@ class Vehicle:
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
     def _update_iteration_break(self):
-        self._iteration_break = self._simulation_step / self._speed
+        self._iteration_break = abs(self._simulation_step / self._speed)
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -199,16 +199,17 @@ class Vehicle:
 
         # Simulate trailer
         if (self._trailer):
-            self._trailer.step_trailer()
+            self._trailer.step_trailer(self._global_cp)
 
-
-    def step_trailer(self):
+    def step_trailer(self, connection_point:CartesianCoord):
         """
         Simulate the movement of a trailer based on connection point
         The connection point from the parent vehicle ist the reference point f of the trailer
+
+        @param connection_point: Global cartesian coordinate of the connection point
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
-        self._global_f = self._global_cp
+        self._global_f = connection_point
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_cp)
 
@@ -217,7 +218,7 @@ class Vehicle:
 
         # Simulate trailer
         if (self._trailer):
-            self._trailer.step_trailer()
+            self._trailer.step_trailer(self._global_cp)
 
     def speed_up(self):
         """Increase vehicle speed"""
@@ -231,13 +232,13 @@ class Vehicle:
 
     def steer_left(self):
         """Increase wheel angle, if the max steering angle is not exceeded"""
-        new_angle = self._steering_angle + self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps
+        new_angle = self._steering_angle + (self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps)
         if self._max_steering_angle >= new_angle:
             self._steering_angle = new_angle
 
     def steer_right(self):
         """Increase wheel angle, if the max steering angle is not exceeded"""
-        new_angle = self._steering_angle - self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps
+        new_angle = self._steering_angle - (self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps)
         if self._max_steering_angle * -1 <= new_angle:
             self._steering_angle = new_angle
 
