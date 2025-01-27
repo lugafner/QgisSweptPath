@@ -17,7 +17,7 @@ class Vehicle:
         # Steering
         self._max_steering_angle: Final[float] = 53.0 / 180 * 3.14159  # radian
         
-        # Trailer and vehicle hirarchi
+        # Trailer and vehicle hierarchy
         self._is_main_vehicle: Final[bool] = True # True for standard vehicle
         self._trailer: Vehicle = None  # Init with False for standard vehicle
         # Connection point must always be initialised with a value
@@ -28,6 +28,10 @@ class Vehicle:
         # Vehicle type (init with True for standard vehicle)
         self._has_body: Final[bool] = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
         self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
+
+        # Driving
+        self._speed: float = 0.0
+        self._wheel_angle: float = 0.0
 
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
@@ -40,6 +44,10 @@ class Vehicle:
         # Technical fields
         self._vehicle_is_placed: bool = False
         self._do_drawing: bool = True
+        self._speed_up_steps: float = 0.1  # Increase speed in m/s with each input
+        self._speed_down_steps: float = 0.1  # Decrease speed in m/s with each input
+        self._steer_in_steps: float = 1.0 / 180 * math.pi  # Turn in wheels with each input in rad
+        self._steer_out_steps: float = 1.0 / 180 * math.pi  # Turn out wheels with each input in rad
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -212,7 +220,6 @@ class Vehicle:
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
 
-
     # Properties
     @property
     def do_drawing(self) -> bool:
@@ -248,6 +255,20 @@ class Vehicle:
         List is used to draw the entire vehicle in a loop
         """
         return self._vehicle_parts
+
+    @property
+    def speed(self) -> float:
+        """
+        Current speed in m/s
+        """
+        return self._speed
+
+    @property
+    def wheel_angle(self):
+        """
+        Current wheel angle in radians
+        """
+        return self._wheel_angle
 
     @property
     def f(self) -> CartesianCoord:
