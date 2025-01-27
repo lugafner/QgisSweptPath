@@ -15,7 +15,7 @@ class Vehicle:
         self._rear_axle_ref_pos: Final[float] = 11.65  # meter from front
         self._axle_with: Final[float] = 2.50  # meter
         # Steering
-        self._max_steering_angle: Final[float] = 53.0 / 180 * 3.14159  # radian
+        self._max_steering_angle: Final[float] = 53.0 / 180 * math.pi  # radian
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: Final[bool] = True # True for standard vehicle
@@ -31,7 +31,7 @@ class Vehicle:
 
         # Driving
         self._speed: float = 0.0
-        self._wheel_angle: float = 0.0
+        self._steering_angle: float = 0.0
 
         # Graphics
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
@@ -47,7 +47,7 @@ class Vehicle:
         self._speed_up_steps: float = 0.1  # Increase speed in m/s with each input
         self._speed_down_steps: float = 0.1  # Decrease speed in m/s with each input
         self._steer_in_steps: float = 1.0 / 180 * math.pi  # Turn in wheels with each input in rad
-        self._steer_out_steps: float = 1.0 / 180 * math.pi  # Turn out wheels with each input in rad
+        self._steer_back_steps: float = 1.0 / 180 * math.pi  # Turn back wheels with each input in rad
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -220,6 +220,26 @@ class Vehicle:
         if (self._trailer):
             self._trailer.step_trailer(self._global_cp)
 
+    def speed_up(self):
+        """Increase vehicle speed"""
+        self._speed += self._speed_up_steps
+
+    def speed_down(self):
+        """Decrease vehicle speed"""
+        self._speed -= self._speed_down_steps
+
+    def steer_left(self):
+        """Increase wheel angle, if the max steering angle is not exceeded"""
+        new_angle = self._steering_angle + self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps
+        if self._max_steering_angle >= new_angle:
+            self._steering_angle = new_angle
+
+    def steer_right(self):
+        """Increase wheel angle, if the max steering angle is not exceeded"""
+        new_angle = self._steering_angle - self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps
+        if self._max_steering_angle * -1 <= new_angle:
+            self._steering_angle = new_angle
+
     # Properties
     @property
     def do_drawing(self) -> bool:
@@ -264,11 +284,11 @@ class Vehicle:
         return self._speed
 
     @property
-    def wheel_angle(self):
+    def steering_angle(self):
         """
         Current wheel angle in radians
         """
-        return self._wheel_angle
+        return self._steering_angle
 
     @property
     def f(self) -> CartesianCoord:
