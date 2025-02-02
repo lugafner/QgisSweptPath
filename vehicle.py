@@ -82,13 +82,13 @@ class Vehicle:
 
         # Setup body
         if self._has_body:
-            back_distanz: float = self._body_length - self._front_axle_ref_pos
+            back_distance: float = self._body_length - self._front_axle_ref_pos
             body_side_offset: float = self._body_width / 2
 
-            self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distanz, body_side_offset)
+            self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distance, body_side_offset)
             self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- wheelbase, self._wheel_side_offset)
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
-            self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distanz, - body_side_offset)
+            self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distance, - body_side_offset)
             self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- wheelbase, - self._wheel_side_offset)
             self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - self._wheel_side_offset)
 
@@ -157,9 +157,6 @@ class Vehicle:
         self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
-    def _update_iteration_break(self):
-        self._iteration_break = abs(self._simulation_step / self._speed)
-
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
         Place the vehicle at a given point and calculate the base point h
@@ -226,12 +223,19 @@ class Vehicle:
     def speed_up(self):
         """Increase vehicle speed"""
         self._speed += self._speed_up_steps
-        self._update_iteration_break()  # Recalculate the break time between the simulation steps
+        # Speed limit of 25 km/h.
+        # The maximum possible speed is dependent on the performance of QGIS. However, 25 km/h should not be exceeded.
+        if self._speed >= 6.94:
+            self.speed_down()
 
     def speed_down(self):
         """Decrease vehicle speed"""
         self._speed -= self._speed_down_steps
-        self._update_iteration_break()  # Recalculate the break time between the simulation steps
+        # Reversing speed limit of -25 km/h.
+        # The maximum possible speed is dependent on the performance of QGIS. However, 25 km/h should not be exceeded.
+        # Currently, reversing is not possible
+        if self._speed <= -6.94:
+            self.speed_up()
 
     def steer_left(self):
         """Increase wheel angle, if the max steering angle is not exceeded"""
@@ -300,11 +304,6 @@ class Vehicle:
     def simulation_step(self, v:float):
         """Set distance to drive with each simulation step in meters"""
         self._simulation_step = v
-
-    @property
-    def iteration_break(self) -> float:
-        """Time between simulation steps in seconds"""
-        return self._iteration_break
 
     @property
     def f(self) -> CartesianCoord:
