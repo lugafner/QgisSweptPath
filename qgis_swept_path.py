@@ -233,23 +233,28 @@ class QgisSweptPath:
         self.dockwidget.txtSteeringAngle.setText(str(self.vehicle.steering_angle / 3.14159 * 180))
 
     def speed_up(self):
-        self.vehicle.speed_up()
-        self.update_speed()
+        if self.simulation_running:
+            self.vehicle.speed_up()
+            self.update_speed()
 
     def speed_down(self):
-        self.vehicle.speed_down()
-        self.update_speed()
+        if self.simulation_running:
+            self.vehicle.speed_down()
+            self.update_speed()
 
     def steer_left(self):
-        self.vehicle.steer_left()
-        self.update_steering()
+        if self.simulation_running:
+            self.vehicle.steer_left()
+            self.update_steering()
     
     def steer_right(self):
-        self.vehicle.steer_right()
-        self.update_steering()
+        if self.simulation_running:
+            self.vehicle.steer_right()
+            self.update_steering()
     
     def stopSimulation(self):
         self.simulation_running = False
+        self.update_status()
 
     def startSimulation(self):
         self._simulation_id = self.dockwidget.txtSimulationId.text()
@@ -261,29 +266,22 @@ class QgisSweptPath:
         self.update_steering()
         self.update_speed()
 
-        t = Thread(target=self.simulate, args=())
-
         self.simulation_running = True
+        t = Thread(target=self.simulate, args=())
         t.start()
+        self.update_status()
 
     def simulate(self):
         points = []
         while self.simulation_running:
-            self.vehicle.step()
-            point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
-            points.append(point)
-            self._draw_vehicle()
-
-            self.update_status()
-            time.sleep(self.vehicle.iteration_break)
-
-        canvas = self.iface.mapCanvas()
-        polyline = QgsRubberBand(canvas, Qgis.GeometryType.Line)
-        polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
-        polyline.setColor(QColor(255, 0, 0))
-        polyline.setWidth(3)
-
-        self.update_status()
+            if self.vehicle.speed > 0.05:
+                self.vehicle.step()
+                point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
+                points.append(point)
+                self._draw_vehicle()
+                time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
+            else:
+                time.sleep(1)
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
