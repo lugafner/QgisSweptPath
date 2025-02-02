@@ -287,15 +287,16 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
-        trailer = Vehicle()
+        # trailer = Vehicle()
+        # trailer._is_main_vehicle = False  # For testing only
         self.vehicle = Vehicle()
-        self.vehicle.trailer = trailer
+        # self.vehicle.trailer = trailer
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
         for v, f in self._vehicle_features.items():
             f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
-            f["wheel_angle"] = 0.0  # TODO: Get wheel angle from vehicle
+            f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
             f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_layer.dataProvider().addFeatures([f])
 
@@ -311,8 +312,7 @@ class QgisSweptPath:
             feature["size_y"] = v.symbol_size_y
             feature["offset_x"] = v.symbol_offset_x
             feature["offset_y"] = v.symbol_offset_y
-            feature["wheel_angle"] = 0.0  # TODO: Get wheel angle from vehicle
-            feature["wheel_side_offset"] = v.wheel_side_offset
+            feature["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
             feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
             self._vehicle_features[v] = feature
 
@@ -334,5 +334,4 @@ class QgisSweptPath:
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Double)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Double)])
             self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_angle", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_side_offset", QVariant.Double)])
             self._vehicle_layer.updateFields()
