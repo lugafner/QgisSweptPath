@@ -1,20 +1,61 @@
-<svg width="150mm" height="25mm" xmlns="http://www.w3.org/2000/svg">
+<svg 
+    width="150"
+    height="25" 
+    viewBox="0 0 150 25"
+    xmlns="http://www.w3.org/2000/svg">
       <style>
         .body {
-            stroke-width: 1mm;
+            stroke-width: 1;
             stroke: black;
             fill: white;
         }
+        .wheel {
+            fill: black;
+        }
     </style>
 
-    <g>
-        <rect 
-            class="body"
-            x="2mm"
-            y="2mm"
-            width="146mm"
-            height="21mm"
-            rx="1mm"
-        />
+    <rect 
+        class="body"
+        x="0.5"
+        y="0.5"
+        width="149"
+        height="24"
+        rx="1"
+    />
+    <g transform="translate(118.025 5.512)">
+    <rect 
+        id="left_wheel"
+        class="wheel"
+        x="-4.875"
+        y="-5.512"
+        width="9.75"
+        height="2.74"
+        rx="1"
+        transform="param(wheel_angle)"
+    />
+    <circle
+        x="0"
+        y="0"
+        r="1"
+        fill="black"
+    />
+    </g>
+    <g transform="translate(118.025 19.488)">
+    <rect
+        id="right_wheel" 
+        class="wheel"
+        x="-4.875"
+        y="2.772"
+        width="9.75"
+        height="2.74"
+        rx="1"
+        transform="param(wheel_angle)"
+    />
+        <circle
+        x="0"
+        y="0"
+        r="1"
+        fill="black"
+    />
     </g>
 </svg>
