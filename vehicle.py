@@ -14,8 +14,8 @@ class Vehicle:
         self._front_axle_ref_pos: Final[float] = 3.10  # meter from front
         self._rear_axle_ref_pos: Final[float] = 11.65  # meter from front
         self._axle_with: Final[float] = 2.50  # meter
-        # Steering
-        self._max_steering_angle: Final[float] = 53.0 / 180 * math.pi  # radian
+        # Steering angle  (i.e. 53° => max 26.5 to -26.5 deg)
+        self._max_steering_angle: Final[float] = 26.5 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: Final[bool] = True # True for standard vehicle
@@ -26,7 +26,7 @@ class Vehicle:
         self._vehicle_parts: list[Vehicle] = []
         
         # Vehicle type (init with True for standard vehicle)
-        self._has_body: Final[bool] = True  # When false, the vehicle has no axles an no bodys (i.e. drawbar)
+        self._has_body: Final[bool] = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
         self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
 
         # Driving
@@ -37,9 +37,11 @@ class Vehicle:
         self._symbol: Final[str] = "./vehicles/vehicle.svg"
         self._symbol_size_x: Final[float] = 15.0 # SVG symbol size x in QGIS style units (usually meters)
         self._symbol_size_y: Final[float] = 2.5  # SVG symbol size y in QGIS style units (usually meters)
-        # Offset to Place the symbol. Base point is point F. SVG base point is upper left. All in QGIS Style Units (normally meters)
-        self._symbol_offset_x: Final[float] = -12.5
-        self._symbol_offset_y: Final[float] = -1.25
+        # Offset to Place the symbol. Base point is point F.
+        # SVG base point depends on the defined align in the QGIS style (normally center)
+        # All in QGIS Style Units (normally meters)
+        self._symbol_offset_x: Final[float] = -4.4
+        self._symbol_offset_y: Final[float] = 0.0
         # Displaying steered wheels
         self._wheel_side_offset: float = self._axle_with / 2
         
@@ -409,8 +411,23 @@ class Vehicle:
         return self._max_steering_angle
 
     @property
-    def wheel_side_offset(self) -> float:
+    def has_front_axle(self) -> bool:
         """
-        The side offset of the wheels from the center axe x (always positive)
+        Returns true if the vehicle has a front axle, which will also be drawn
         """
-        return self._wheel_side_offset
+        return self._has_front_axle
+
+    @property
+    def has_body(self) -> bool:
+        """
+        Returns true if the vehicle has a body, which will also be drawn
+        """
+        return self._has_body
+
+    @property
+    def is_main_vehicle(self) -> bool:
+        """
+        Returns true, if the vehicle is the main vehicle
+        The main vehicle is the driven vehicle. This vehicle could tow a trailer
+        """
+        return self._is_main_vehicle
