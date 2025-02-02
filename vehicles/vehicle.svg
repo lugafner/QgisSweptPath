@@ -3,7 +3,8 @@
     height="25" 
     viewBox="0 0 150 25"
     xmlns="http://www.w3.org/2000/svg">
-      <style>
+      
+    <style>
         .body {
             stroke-width: 1;
             stroke: black;
@@ -14,6 +15,8 @@
         }
     </style>
 
+    <g>
+    <!-- vehicle body (origin top left)-->
     <rect 
         class="body"
         x="0.5"
@@ -22,7 +25,10 @@
         height="24"
         rx="1"
     />
-    <g transform="translate(118.025 5.512)">
+    </g>
+
+    <g transform="translate(119 5.512)">
+    <!-- left front wheel (origin left pivot) -->
     <rect 
         id="left_wheel"
         class="wheel"
@@ -34,13 +40,16 @@
         transform="param(wheel_angle)"
     />
     <circle
-        x="0"
-        y="0"
-        r="1"
+        id="left_pivot"
+        cx="0"
+        cy="0"
+        r="0.5"
         fill="black"
     />
     </g>
-    <g transform="translate(118.025 19.488)">
+
+    <g transform="translate(119 19.488)">
+    <!-- right front wheel (origin right pivot)-->
     <rect
         id="right_wheel" 
         class="wheel"
@@ -51,10 +60,11 @@
         rx="1"
         transform="param(wheel_angle)"
     />
-        <circle
-        x="0"
-        y="0"
-        r="1"
+    <circle
+        id="right_pivot"
+        cx="0"
+        cy="0"
+        r="0.5"
         fill="black"
     />
     </g>
