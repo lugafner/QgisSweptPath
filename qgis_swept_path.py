@@ -38,6 +38,7 @@ import os.path
 from threading import Thread
 import time
 from .vehicle import Vehicle
+from .vehicles.mercedes_citaro import MercedesCitaro
 from .coord import CartesianCoord, CoordUtils
 
 class QgisSweptPath:
@@ -47,6 +48,7 @@ class QgisSweptPath:
         """ Constructor """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.canvas = iface.mapCanvas()
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
@@ -260,7 +262,7 @@ class QgisSweptPath:
         self._simulation_id = self.dockwidget.txtSimulationId.text()
 
         self._setup_vehicle()
-        self.vehicle.place_vehicle(CartesianCoord(0.0, 0.0), 0.0)
+        self.vehicle.place_vehicle(CartesianCoord(2686908.67,1245925.07), 0.0)
         self._create_vehicle_drawing()
 
         self.update_steering()
@@ -278,7 +280,8 @@ class QgisSweptPath:
                 self.vehicle.step()
                 point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
                 points.append(point)
-                self._draw_vehicle()
+                if not self.canvas.isDrawing():
+                    self._draw_vehicle()
                 time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
             else:
                 time.sleep(1)
@@ -287,7 +290,7 @@ class QgisSweptPath:
         # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
         # trailer = Vehicle()
         # trailer._is_main_vehicle = False  # For testing only
-        self.vehicle = Vehicle()
+        self.vehicle = MercedesCitaro()
         # self.vehicle.trailer = trailer
         
     def _draw_vehicle(self):

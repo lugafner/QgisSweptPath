@@ -1,8 +1,8 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.34.14-Prizren" styleCategories="Symbology">
-  <renderer-v2 type="singleSymbol" forceraster="0" referencescale="-1" enableorderby="0" symbollevels="0">
+<qgis styleCategories="Symbology" version="3.34.14-Prizren">
+  <renderer-v2 referencescale="-1" symbollevels="0" enableorderby="0" type="singleSymbol" forceraster="0">
     <symbols>
-      <symbol type="marker" name="0" is_animated="0" alpha="1" force_rhr="0" frame_rate="10" clip_to_extent="1">
+      <symbol type="marker" alpha="1" clip_to_extent="1" name="0" is_animated="0" frame_rate="10" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option value="" type="QString" name="name"/>
@@ -10,13 +10,13 @@
             <Option value="collection" type="QString" name="type"/>
           </Option>
         </data_defined_properties>
-        <layer locked="0" enabled="1" pass="0" id="{9d94e848-c95f-4e47-b460-de2c1de24205}" class="SvgMarker">
+        <layer class="SvgMarker" locked="0" id="{9d94e848-c95f-4e47-b460-de2c1de24205}" enabled="1" pass="0">
           <Option type="Map">
             <Option value="0" type="QString" name="angle"/>
             <Option value="114,155,111,255" type="QString" name="color"/>
             <Option value="1" type="QString" name="fixedAspectRatio"/>
             <Option value="1" type="QString" name="horizontal_anchor_point"/>
-            <Option value="C:/Users/Lukas Gafner/AppData/Roaming/QGIS/QGIS3/profiles/GAL_Bearbeitung/python/plugins/QgisSweptPath/vehicles/vehicle.svg" type="QString" name="name"/>
+            <Option value="C:/Users/Lukas Gafner/AppData/Roaming/QGIS/QGIS3/profiles/GAL_Bearbeitung/python/plugins/QgisSweptPath/vehicles/mercedes_citaro.svg" type="QString" name="name"/>
             <Option value="0,0" type="QString" name="offset"/>
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale"/>
             <Option value="RenderMetersInMapUnits" type="QString" name="offset_unit"/>
@@ -66,7 +66,7 @@
             </Option>
           </data_defined_properties>
         </layer>
-        <layer locked="0" enabled="1" pass="0" id="{0dfedd7f-b6c3-46af-8232-f125953b405d}" class="SimpleMarker">
+        <layer class="SimpleMarker" locked="0" id="{0dfedd7f-b6c3-46af-8232-f125953b405d}" enabled="1" pass="0">
           <Option type="Map">
             <Option value="0" type="QString" name="angle"/>
             <Option value="square" type="QString" name="cap_style"/>
@@ -110,7 +110,7 @@
   <selection mode="Default">
     <selectionColor invalid="1"/>
     <selectionSymbol>
-      <symbol type="marker" name="" is_animated="0" alpha="1" force_rhr="0" frame_rate="10" clip_to_extent="1">
+      <symbol type="marker" alpha="1" clip_to_extent="1" name="" is_animated="0" frame_rate="10" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option value="" type="QString" name="name"/>
@@ -118,7 +118,7 @@
             <Option value="collection" type="QString" name="type"/>
           </Option>
         </data_defined_properties>
-        <layer locked="0" enabled="1" pass="0" id="{c6dc5af1-57a9-4734-b931-8176a5387c55}" class="SimpleMarker">
+        <layer class="SimpleMarker" locked="0" id="{c6dc5af1-57a9-4734-b931-8176a5387c55}" enabled="1" pass="0">
           <Option type="Map">
             <Option value="0" type="QString" name="angle"/>
             <Option value="square" type="QString" name="cap_style"/>
