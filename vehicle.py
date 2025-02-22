@@ -15,8 +15,8 @@ class Vehicle:
         self._front_axle_ref_pos: float = 3.10  # meter from front
         self._rear_axle_ref_pos: float = 11.65  # meter from front
         self._axle_with: float = 2.50  # meter incl. tires
-        # Steering angle  (i.e. 53° => max 26.5 to -26.5 deg)
-        self._max_steering_angle: float = 26.5 / 180 * math.pi  # In radians
+        # Steering angle  (i.e. 49 deg)
+        self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: bool = True # True for standard vehicle
