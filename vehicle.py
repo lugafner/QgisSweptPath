@@ -6,45 +6,46 @@ from .coord import PolarCoord, CartesianCoord, CoordUtils
 
 class Vehicle:
     def __init__(self):
-        # Vehicle input parameters (TODO: Constructor parameters)
+        # **************************************************************************************************************
+        # Vehicle input parameters. Setup for new vehicle extending this class
         # Body
-        self._body_length: Final[float] = 15.00  # meter
-        self._body_width: Final[float] = 2.50  # meter
+        self._body_length: float = 15.00  # meter
+        self._body_width: float = 2.50  # meter
         # Chassis
-        self._front_axle_ref_pos: Final[float] = 3.10  # meter from front
-        self._rear_axle_ref_pos: Final[float] = 11.65  # meter from front
-        self._axle_with: Final[float] = 2.50  # meter
-        # Steering angle  (i.e. 53° => max 26.5 to -26.5 deg)
-        self._max_steering_angle: Final[float] = 26.5 / 180 * math.pi  # In radians
+        self._front_axle_ref_pos: float = 3.10  # meter from front
+        self._rear_axle_ref_pos: float = 11.65  # meter from front
+        self._axle_with: float = 2.50  # meter incl. tires
+        # Steering angle  (i.e. 49 deg)
+        self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle: Final[bool] = True # True for standard vehicle
+        self._is_main_vehicle: bool = True # True for standard vehicle
         self._trailer: Vehicle = None  # Init with False for standard vehicle
         # Connection point must always be initialised with a value
-        self._connection_point: Final[float] = 11.65  # meter from front
-        # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
-        self._vehicle_parts: list[Vehicle] = []
+        self._connection_point: float = 11.65  # meter from front
         
         # Vehicle type (init with True for standard vehicle)
-        self._has_body: Final[bool] = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
-        self._has_front_axle: Final[bool] = True  # when false, no front axle will be drawn (i.e. semitrailer)
+        self._has_body: bool = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
+        self._has_front_axle: bool = True  # when false, no front axle will be drawn (i.e. semitrailer)
 
+        # Graphics
+        self._symbol: str = "./vehicles/vehicle.svg"
+        self._symbol_size_x: float = 15.0 # SVG symbol size x in QGIS style units (usually meters)
+        self._symbol_size_y: float = 2.5  # SVG symbol size y in QGIS style units (usually meters)
+        # Offset to Place the symbol. Base point is point F.
+        # SVG base point depends on the defined align in the QGIS style (normally center)
+        # All in QGIS Style Units (normally meters)
+        self._symbol_offset_x: float = -4.4
+        self._symbol_offset_y: float = 0.0
+        # Displaying steered wheels
+        self._wheel_side_offset: float = self._axle_with / 2
+
+        # **************************************************************************************************************
+        # No setup for new vehicle necessary
         # Driving
         self._speed: float = 1.0
         self._steering_angle: float = 0.0
 
-        # Graphics
-        self._symbol: Final[str] = "./vehicles/vehicle.svg"
-        self._symbol_size_x: Final[float] = 15.0 # SVG symbol size x in QGIS style units (usually meters)
-        self._symbol_size_y: Final[float] = 2.5  # SVG symbol size y in QGIS style units (usually meters)
-        # Offset to Place the symbol. Base point is point F.
-        # SVG base point depends on the defined align in the QGIS style (normally center)
-        # All in QGIS Style Units (normally meters)
-        self._symbol_offset_x: Final[float] = -4.4
-        self._symbol_offset_y: Final[float] = 0.0
-        # Displaying steered wheels
-        self._wheel_side_offset: float = self._axle_with / 2
-        
         # Technical fields
         self._vehicle_is_placed: bool = False
         self._do_drawing: bool = True
@@ -54,6 +55,7 @@ class Vehicle:
         self._steer_back_steps: float = 1.0 / 180 * math.pi  # Turn back wheels with each input in rad
         self._simulation_step: float = 0.05  # Distance to drive with each simulation step in m
         self._iteration_break: float = self._simulation_step / self._speed  # Break time between simulation steps (init with none for trailers)
+        self._vehicle_parts: list[Vehicle] = []  # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -97,7 +99,7 @@ class Vehicle:
             self._local_point_fwr: PolarCoord = CoordUtils.to_polar(0.0, - self._wheel_side_offset)
 
         # TODO: Remove, if the vehicle is always placed first
-        # Initialise Fehicle position
+        # Initialise vehicle position
         # self._global_f = CartesianCoord(0.0, 0.0)  # Initialize reference point with 0, 0
         # self._global_h = CartesianCoord(- self._wheelbase, 0.0)
         # self._global_a: float = self._calc_azimuth()  # Initialize azimuth (get from f and h)
