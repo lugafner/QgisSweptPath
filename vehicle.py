@@ -1,6 +1,5 @@
 import math
 
-from typing import Final
 from .coord import PolarCoord, CartesianCoord, CoordUtils
 
 
@@ -76,8 +75,8 @@ class Vehicle:
         # Setup polar coordinates of the vehicle local crs
         # Necessary points
         # Setup rear reference point
-        wheelbase: float = self._rear_axle_ref_pos - self._front_axle_ref_pos
-        self._local_point_h: PolarCoord = CoordUtils.to_polar(- wheelbase, 0.0)
+        self._wheelbase: float = self._rear_axle_ref_pos - self._front_axle_ref_pos
+        self._local_point_h: PolarCoord = CoordUtils.to_polar(- self._wheelbase, 0.0)
         # Setup connection point
         connection_point_distance: float = self._connection_point - self._front_axle_ref_pos
         self._local_point_cp: PolarCoord = CoordUtils.to_polar(- connection_point_distance, 0.0)
@@ -88,10 +87,10 @@ class Vehicle:
             body_side_offset: float = self._body_width / 2
 
             self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distance, body_side_offset)
-            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- wheelbase, self._wheel_side_offset)
+            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- self._wheelbase, self._wheel_side_offset)
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
             self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distance, - body_side_offset)
-            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- wheelbase, - self._wheel_side_offset)
+            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- self._wheelbase, - self._wheel_side_offset)
             self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - self._wheel_side_offset)
 
         if self._has_body and self._has_front_axle:
@@ -183,14 +182,28 @@ class Vehicle:
         self._vehicle_is_placed = True
 
 
+    def _get_front_wheel_radius(self) -> float:
+         return float(self._wheelbase / math.cos(math.pi / 2.0 - self._steering_angle))
+
+
+
     def step(self):
         """
         Calculates the next point based on current location and steering angle
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
 
+        if abs(self._steering_angle) > 0.0:
+            front_wheel_radius = self._get_front_wheel_radius()
+            center_angle = 2.0 * math.asin((self._simulation_step / 2.0) / front_wheel_radius)
+            driving_vector_angle = (math.pi - center_angle) / 2.0
+            driving_vector = PolarCoord(self._simulation_step, self._steering_angle + math.pi / 2.0 - driving_vector_angle)
+        else:
+            driving_vector = PolarCoord(self._simulation_step, 0.0)
+
+
         # Use current steering angle and simulation step
-        driving_vector = PolarCoord(self._simulation_step, self._steering_angle)
+        # driving_vector = PolarCoord(self._simulation_step, self._steering_angle)
         self._global_f = self._calc_global_coord(driving_vector)
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_h)
