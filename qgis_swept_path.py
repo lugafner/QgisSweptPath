@@ -21,14 +21,13 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QCoreApplication, Qt, QVariant
-from qgis.PyQt.QtGui import QIcon, QColor
+from qgis.PyQt.QtCore import Qt, QVariant
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, Qgis, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer
-from qgis.gui import QgsRubberBand, QgsGui
+from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer
+from qgis.gui import QgsGui
 
 # Initialize Qt resources from file resources.py
-from .resources import *
 
 # Import the code for the DockWidget
 from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
