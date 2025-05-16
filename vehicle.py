@@ -19,7 +19,7 @@ class Vehicle:
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Vehicle = None  # Init with False for standard vehicle
+        self._trailer: Vehicle = None  # Init with None for standard vehicle
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
         
@@ -119,9 +119,9 @@ class Vehicle:
 
 
     def _calc_azimuth(self) -> float:
-        """Calculates the azimut of the vehicle based on the points f and h
+        """Calculates the azimuth of the vehicle based on the points f and h
 
-        @return: Azimut of the vehicle (0.0 = facing east)
+        @return: Azimuth of the vehicle (0.0 = facing east)
         """
         dx = self._global_f.x - self._global_h.x
         dy = self._global_f.y - self._global_h.y
@@ -136,8 +136,8 @@ class Vehicle:
         @param local_coord: The local coordinate as polar coordinate
         @return: The global coordinate
         """
-        new_azimut: float = self._global_a + local_coord.a
-        cartesian_shift: CartesianCoord = CoordUtils.to_cartesian(local_coord.d, new_azimut)
+        new_azimuth: float = self._global_a + local_coord.a
+        cartesian_shift: CartesianCoord = CoordUtils.to_cartesian(local_coord.d, new_azimuth)
         return cartesian_shift + self._global_f 
     
 
@@ -161,7 +161,7 @@ class Vehicle:
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
         Place the vehicle at a given point and calculate the base point h
-        This function is only needet at first vehicle placement
+        This function is only needed at first vehicle placement
         During driving, the azimuth a is not known
 
         @param f: Coordinate of reference point f
@@ -173,7 +173,7 @@ class Vehicle:
         self._global_cp = self._calc_global_coord(self._local_point_cp)
 
         # Place trailer
-        if (self._trailer):
+        if self._trailer:
             self._trailer.place_vehicle(self._global_cp, self._global_a)
 
         # Draw the rest of the body points
@@ -184,7 +184,6 @@ class Vehicle:
 
     def _get_front_wheel_radius(self) -> float:
          return float(self._wheelbase / math.cos(math.pi / 2.0 - self._steering_angle))
-
 
 
     def step(self):
@@ -213,7 +212,7 @@ class Vehicle:
         if self._do_drawing: self._draw()
 
         # Simulate trailer
-        if (self._trailer):
+        if self._trailer:
             self._trailer.step_trailer(self._global_cp)
 
     def step_trailer(self, connection_point:CartesianCoord):
@@ -232,7 +231,7 @@ class Vehicle:
         if self._do_drawing: self._draw()
 
         # Simulate trailer
-        if (self._trailer):
+        if self._trailer:
             self._trailer.step_trailer(self._global_cp)
 
     def speed_up(self):
@@ -268,7 +267,7 @@ class Vehicle:
     @property
     def do_drawing(self) -> bool:
         """
-        Specifie if the vehicle body should be drawn
+        Specify if the vehicle body should be drawn
         For normal vehicle parts set to True (default). False only used i.e. for drawbar
         """
         return self._do_drawing
@@ -332,7 +331,7 @@ class Vehicle:
 
     @property
     def a(self) -> float:
-        """Vehicle azimut in rad"""
+        """Vehicle azimuth in rad"""
         return self._global_a
 
     @property
