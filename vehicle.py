@@ -1,6 +1,7 @@
 import math
 
 from .coord import PolarCoord, CartesianCoord, CoordUtils
+from .simple_logger import PathLogger
 
 
 class Vehicle:
@@ -62,6 +63,9 @@ class Vehicle:
 
         # Setup vehicle shape
         self._init_vehicle_shape()
+
+        # Debugging
+        self._path_logger = PathLogger()
 
 
     def _init_vehicle_shape(self):
@@ -223,7 +227,7 @@ class Vehicle:
     def _get_driving_vector_front(self) -> PolarCoord:
         center_angle = self._get_center_angle()
         outer_angle = (math.pi - center_angle) / 2
-        driving_vector_angle = math.pi / 2 + outer_angle - self.steering_angle
+        driving_vector_angle = math.pi / 2 - outer_angle + self.steering_angle
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
@@ -249,6 +253,21 @@ class Vehicle:
         # Calculate the global points f and h
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
         self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
+
+
+        # Log path
+        self._path_logger.write_log(
+            self._get_front_wheel_radius(),
+            self._get_rear_wheel_radius(),
+            self._get_center_angle(),
+            self.steering_angle,
+            self._wheelbase,
+            self._global_a,
+            self._global_f.x,
+            self._global_f.y,
+            self._global_h.x,
+            self._global_h.y
+        )
 
         # After calculating the points f and h, the global vehicle azimuth must be recalculated
         # before the other coordinates are calculated
