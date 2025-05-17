@@ -40,3 +40,8 @@ class MercedesCitaro(Vehicle):
         # Displaying steered wheels
         self._wheel_side_offset = self._axle_with / 2
 
+        # Update the vehicle parts list
+        self._update_vehicle_parts()
+
+        # Setup vehicle shape
+        self._init_vehicle_shape()
