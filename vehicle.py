@@ -214,24 +214,24 @@ class Vehicle:
         return float(self._wheelbase * math.tan(math.pi / 2.0 - self._steering_angle))
 
     def _get_center_angle(self) -> float:
-        return float(2.0 * math.asin((self._simulation_step / 2.0) / self._get_front_wheel_radius()))
+        """
+        Calculate the center angle of one step.
+        Calculation based on step distance of the rear wheel point h along the driving arch
+        """
+        return float(self._simulation_step / self._get_rear_wheel_radius())
 
     def _get_driving_vector_front(self) -> PolarCoord:
         center_angle = self._get_center_angle()
-        outer_angle = (math.pi / 2) - (center_angle / 2)
-        steering_to_triangle_offset = (math.pi / 2) - outer_angle
-        driving_vector_angle = self._steering_angle + steering_to_triangle_offset
-
-        # driving_vector_angle = (math.pi - center_angle) / 2.0    self._steering_angle + math.pi / 2.0 -
-        return PolarCoord(self._simulation_step, driving_vector_angle)
+        outer_angle = (math.pi - center_angle) / 2
+        driving_vector_angle = math.pi / 2 + outer_angle - self.steering_angle
+        driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
+        return PolarCoord(driving_vector_distance, driving_vector_angle)
 
     def _get_driving_vector_rear(self) -> PolarCoord:
         center_angle = self._get_center_angle()
-        outer_angle = (math.pi / 2) - (center_angle / 2)
+        outer_angle = (math.pi  - center_angle) / 2
         driving_vector_angle = (math.pi / 2) - outer_angle
-        driving_vector_distance = self._get_rear_wheel_radius() * (math.sin(center_angle) / math.sin(outer_angle))
-
-        # driving_vector_angle = (math.pi - center_angle) / 2.0    self._steering_angle + math.pi / 2.0 -
+        driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
 
