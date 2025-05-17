@@ -1,7 +1,7 @@
 import math
 
-from typing import Final
 from .coord import PolarCoord, CartesianCoord, CoordUtils
+from .simple_logger import PathLogger
 
 
 class Vehicle:
@@ -20,7 +20,7 @@ class Vehicle:
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Vehicle = None  # Init with False for standard vehicle
+        self._trailer: Vehicle = None  # Init with None for standard vehicle
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
         
@@ -45,6 +45,7 @@ class Vehicle:
         # Driving
         self._speed: float = 1.0
         self._steering_angle: float = 0.0
+        self._trailer_angle: float = 0.0
 
         # Technical fields
         self._vehicle_is_placed: bool = False
@@ -63,6 +64,9 @@ class Vehicle:
         # Setup vehicle shape
         self._init_vehicle_shape()
 
+        # Debugging
+        self._path_logger = PathLogger()
+
 
     def _init_vehicle_shape(self):
         # Vehicle local crs (polar from F)
@@ -76,8 +80,8 @@ class Vehicle:
         # Setup polar coordinates of the vehicle local crs
         # Necessary points
         # Setup rear reference point
-        wheelbase: float = self._rear_axle_ref_pos - self._front_axle_ref_pos
-        self._local_point_h: PolarCoord = CoordUtils.to_polar(- wheelbase, 0.0)
+        self._wheelbase: float = self._rear_axle_ref_pos - self._front_axle_ref_pos
+        self._local_point_h: PolarCoord = CoordUtils.to_polar(- self._wheelbase, 0.0)
         # Setup connection point
         connection_point_distance: float = self._connection_point - self._front_axle_ref_pos
         self._local_point_cp: PolarCoord = CoordUtils.to_polar(- connection_point_distance, 0.0)
@@ -88,10 +92,10 @@ class Vehicle:
             body_side_offset: float = self._body_width / 2
 
             self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distance, body_side_offset)
-            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- wheelbase, self._wheel_side_offset)
+            self._local_point_rwl: PolarCoord = CoordUtils.to_polar(- self._wheelbase, self._wheel_side_offset)
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
             self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distance, - body_side_offset)
-            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- wheelbase, - self._wheel_side_offset)
+            self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- self._wheelbase, - self._wheel_side_offset)
             self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - self._wheel_side_offset)
 
         if self._has_body and self._has_front_axle:
@@ -120,27 +124,40 @@ class Vehicle:
 
 
     def _calc_azimuth(self) -> float:
-        """Calculates the azimut of the vehicle based on the points f and h
+        """Calculates the azimuth of the vehicle based on the points f and h
 
-        @return: Azimut of the vehicle (0.0 = facing east)
+        @return: Azimuth of the vehicle (0.0 = facing east) in radians
         """
         dx = self._global_f.x - self._global_h.x
         dy = self._global_f.y - self._global_h.y
         return math.atan2(dy, dx)
 
 
-    def _calc_global_coord(self, local_coord: PolarCoord) -> CartesianCoord:
+    def _calc_angle_between_trailer(self) -> float:
+        """Calculate the angle between the vehicle (self) and the trailer (_trailer)
+
+        @return: Angle between vehicle and trailer (0.0 = straight) in radians
+        """
+        return self._global_a - self._trailer._global_a
+
+
+    def _calc_global_coord(self, local_coord: PolarCoord, reference_point: CartesianCoord = None) -> CartesianCoord:
         """
         Calculate the global coordinate for a local polar coordinate
         Based on current position and rotation of the vehicle
+        If the reference point not specified, the front wheel point f is used
 
         @param local_coord: The local coordinate as polar coordinate
         @return: The global coordinate
         """
-        new_azimut: float = self._global_a + local_coord.a
-        cartesian_shift: CartesianCoord = CoordUtils.to_cartesian(local_coord.d, new_azimut)
-        return cartesian_shift + self._global_f 
-    
+
+        if not reference_point:
+            reference_point = self._global_f
+
+        new_azimuth: float = self._global_a + local_coord.a
+        cartesian_shift: CartesianCoord = CoordUtils.to_cartesian(local_coord.d, new_azimuth)
+        return cartesian_shift + reference_point
+
 
     def _draw(self):
         if self._has_body: self._draw_body()
@@ -155,14 +172,16 @@ class Vehicle:
         self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
         self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
 
+
     def _draw_front_axle(self):
         self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
+
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
         Place the vehicle at a given point and calculate the base point h
-        This function is only needet at first vehicle placement
+        This function is only needed at first vehicle placement
         During driving, the azimuth a is not known
 
         @param f: Coordinate of reference point f
@@ -174,7 +193,7 @@ class Vehicle:
         self._global_cp = self._calc_global_coord(self._local_point_cp)
 
         # Place trailer
-        if (self._trailer):
+        if self._trailer:
             self._trailer.place_vehicle(self._global_cp, self._global_a)
 
         # Draw the rest of the body points
@@ -183,44 +202,110 @@ class Vehicle:
         self._vehicle_is_placed = True
 
 
+    def _get_front_wheel_radius(self) -> float:
+        """
+        Calculate the radius, on which the front wheel point (f) drives
+        Can only be calculated when the wheels are turned
+        """
+        return float(self._wheelbase / math.cos(math.pi / 2.0 - self._steering_angle))
+
+
+    def _get_rear_wheel_radius(self) -> float:
+        """
+        Calculate the radius, on which the rear wheel point (h) drives
+        Can only be calculated when the wheels are turned
+        """
+        return float(self._wheelbase * math.tan(math.pi / 2.0 - self._steering_angle))
+
+    def _get_center_angle(self) -> float:
+        """
+        Calculate the center angle of one step.
+        Calculation based on step distance of the rear wheel point h along the driving arch
+        """
+        return float(self._simulation_step / self._get_rear_wheel_radius())
+
+    def _get_driving_vector_front(self) -> PolarCoord:
+        center_angle = self._get_center_angle()
+        outer_angle = (math.pi - center_angle) / 2
+        driving_vector_angle = math.pi / 2 - outer_angle + self.steering_angle
+        driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
+        return PolarCoord(driving_vector_distance, driving_vector_angle)
+
+    def _get_driving_vector_rear(self) -> PolarCoord:
+        center_angle = self._get_center_angle()
+        outer_angle = (math.pi  - center_angle) / 2
+        driving_vector_angle = (math.pi / 2) - outer_angle
+        driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
+        return PolarCoord(driving_vector_distance, driving_vector_angle)
+
+
+    def _drive(self):
+        """
+        Drive the vehicle one step
+        """
+        if abs(self._steering_angle) > 0.0:
+            front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front()
+            rear_wheel_driving_vector: PolarCoord = self._get_driving_vector_rear()
+        else:
+            front_wheel_driving_vector = PolarCoord(self._simulation_step, 0.0)
+            rear_wheel_driving_vector = PolarCoord(self._simulation_step, 0.0)
+
+        # Calculate the global points f and h
+        self._global_f = self._calc_global_coord(front_wheel_driving_vector)
+        self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
+
+
+        # Log path
+        self._path_logger.write_log(
+            self._get_front_wheel_radius(),
+            self._get_rear_wheel_radius(),
+            self._get_center_angle(),
+            self.steering_angle,
+            self._wheelbase,
+            self._global_a,
+            self._global_f.x,
+            self._global_f.y,
+            self._global_h.x,
+            self._global_h.y
+        )
+
+        # After calculating the points f and h, the global vehicle azimuth must be recalculated
+        # before the other coordinates are calculated
+        self._global_a = self._calc_azimuth()
+        self._global_cp = self._calc_global_coord(self._local_point_cp)
+
+        # Draw the rest of the body points
+        if self._do_drawing: self._draw()
+
+        # Simulate trailer
+        if self._trailer:
+            self._trailer.step_trailer(self._global_cp, self._trailer_angle)
+
+
     def step(self):
         """
         Calculates the next point based on current location and steering angle
         """
-        assert self._vehicle_is_placed, "Vehicle must be placed first"
+        assert self._vehicle_is_placed, "Vehicle must be placed firs"
+        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        self._drive()
 
-        # Use current steering angle and simulation step
-        driving_vector = PolarCoord(self._simulation_step, self._steering_angle)
-        self._global_f = self._calc_global_coord(driving_vector)
-        self._global_a = self._calc_azimuth()
-        self._global_h = self._calc_global_coord(self._local_point_h)
-        self._global_cp = self._calc_global_coord(self._local_point_cp)
-        
-        # Draw the rest of the body points
-        if self._do_drawing: self._draw()
 
-        # Simulate trailer
-        if (self._trailer):
-            self._trailer.step_trailer(self._global_cp)
-
-    def step_trailer(self, connection_point:CartesianCoord):
+    def step_trailer(self, connection_point: CartesianCoord, vehicle_angle: float):
         """
         Simulate the movement of a trailer based on connection point
         The connection point from the parent vehicle ist the reference point f of the trailer
 
-        @param connection_point: Global cartesian coordinate of the connection point
+        @param connection_point: Global cartesian coordinate of the connection point. Acts as point f of trailer
+        @param vehicle_angle: Angle between parent vehicle and trailer. Acts as steering angle of trailer
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
         self._global_f = connection_point
-        self._global_a = self._calc_azimuth()
-        self._global_h = self._calc_global_coord(self._local_point_cp)
+        self._steering_angle = vehicle_angle
 
-        # Draw the rest of the body points
-        if self._do_drawing: self._draw()
+        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        self._drive()
 
-        # Simulate trailer
-        if (self._trailer):
-            self._trailer.step_trailer(self._global_cp)
 
     def speed_up(self):
         """Increase vehicle speed"""
@@ -255,7 +340,7 @@ class Vehicle:
     @property
     def do_drawing(self) -> bool:
         """
-        Specifie if the vehicle body should be drawn
+        Specify if the vehicle body should be drawn
         For normal vehicle parts set to True (default). False only used i.e. for drawbar
         """
         return self._do_drawing
@@ -319,7 +404,7 @@ class Vehicle:
 
     @property
     def a(self) -> float:
-        """Vehicle azimut in rad"""
+        """Vehicle azimuth in rad"""
         return self._global_a
 
     @property
