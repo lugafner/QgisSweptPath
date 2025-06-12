@@ -39,6 +39,7 @@ import time
 from .vehicle import Vehicle
 from .vehicles.mercedes_citaro import MercedesCitaro
 from .coord import CartesianCoord, CoordUtils
+from .vehicle_placer import VehiclePlacer
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -107,6 +108,10 @@ class QgisSweptPath:
         self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L")
         self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ")
         self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K")
+
+        # Vehicle placer
+        self._vehicle_placer = VehiclePlacer(self.iface)
+
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
@@ -259,9 +264,10 @@ class QgisSweptPath:
 
     def startSimulation(self):
         self._simulation_id = self.dockwidget.txtSimulationId.text()
-
+        print("Start Simulation")
         self._setup_vehicle()
-        self.vehicle.place_vehicle(CartesianCoord(2686908.67,1245925.07), 0.0)
+        self._place_vehicle()
+        # self.vehicle.place_vehicle(CartesianCoord(2686908.67,1245925.07), 0.0)
         self._create_vehicle_drawing()
 
         self.update_steering()
@@ -291,6 +297,12 @@ class QgisSweptPath:
         # trailer._is_main_vehicle = False  # For testing only
         self.vehicle = MercedesCitaro()
         # self.vehicle.trailer = trailer
+
+    def _place_vehicle(self):
+        # Set vehicle base point with first click and set orientation with second click
+        self.canvas.setMapTool(self._vehicle_placer)
+        print(self._vehicle_placer.clicked_point)
+        self.canvas.unsetMapTool(self._vehicle_placer)
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
