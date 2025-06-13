@@ -24,7 +24,7 @@
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer
+from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis
 from qgis.gui import QgsGui
 
 # Initialize Qt resources from file resources.py
@@ -93,6 +93,8 @@ class QgisSweptPath:
             self.dockwidget.btnStartSimulation.clicked.connect(self.startSimulation)
             self.dockwidget.btnStopSimulation.clicked.connect(self.stopSimulation)
             self.dockwidget.btnAddLayers.clicked.connect(self._create_layers)
+            self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
+            self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
 
             # Setup Controls
             self.setupControls()
@@ -108,9 +110,6 @@ class QgisSweptPath:
         self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L")
         self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ")
         self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K")
-
-        # Vehicle placer
-        self._vehicle_placer = VehiclePlacer(self.iface)
 
 
     def initGui(self):
@@ -264,19 +263,27 @@ class QgisSweptPath:
 
     def startSimulation(self):
         self._simulation_id = self.dockwidget.txtSimulationId.text()
-        print("Start Simulation")
-        self._setup_vehicle()
-        self._place_vehicle()
+        # self._setup_vehicle()
+        # self._place_vehicle()
         # self.vehicle.place_vehicle(CartesianCoord(2686908.67,1245925.07), 0.0)
-        self._create_vehicle_drawing()
 
-        self.update_steering()
-        self.update_speed()
+        # The vehicle must first be created manually and be placed
+        if self.vehicle is not None and self.vehicle.is_placed:
+            self._create_vehicle_drawing()
 
-        self.simulation_running = True
-        t = Thread(target=self.simulate, args=())
-        t.start()
-        self.update_status()
+            self.update_steering()
+            self.update_speed()
+
+            self.simulation_running = True
+            t = Thread(target=self.simulate, args=())
+            t.start()
+            self.update_status()
+        else:
+            self.iface.messageBar().pushMessage(
+                "Can't start simulation",
+                "The vehicle must first be created and placed",
+                level=Qgis.Critical
+            )
 
     def simulate(self):
         points = []
@@ -300,9 +307,18 @@ class QgisSweptPath:
 
     def _place_vehicle(self):
         # Set vehicle base point with first click and set orientation with second click
-        self.canvas.setMapTool(self._vehicle_placer)
-        print(self._vehicle_placer.clicked_point)
-        self.canvas.unsetMapTool(self._vehicle_placer)
+        if self.vehicle is not None:
+            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)
+            self.canvas.setMapTool(self._vehicle_placer)
+        else:
+            self.iface.messageBar().pushMessage(
+                "Can't place vehicle",
+                "The vehicle must first be created",
+                level=Qgis.Critical
+            )
+
+        # print(self._vehicle_placer.clicked_point)
+        # self.canvas.unsetMapTool(self._vehicle_placer)
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
