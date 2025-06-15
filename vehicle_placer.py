@@ -1,13 +1,15 @@
 from networkx.classes import selfloop_edges
-from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent
+from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsMapToolPan
 from qgis.core import QgsPointXY
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt, pyqtSignal
 
 from .coord import CoordUtils, PolarCoord, CartesianCoord
 from .vehicle import Vehicle
 
 
 class VehiclePlacer(QgsMapToolEmitPoint):
+    placed = pyqtSignal(Vehicle, name="VehiclePlaced")
+
     def __init__(self, iface: QgisInterface, vehicle: Vehicle):
         self._iface: QgisInterface = iface
         self._canvas: QgsMapCanvas = iface.mapCanvas()
@@ -24,11 +26,9 @@ class VehiclePlacer(QgsMapToolEmitPoint):
     def canvasPressEvent(self, e: QgsMapMouseEvent):
         if e.button() == Qt.LeftButton:
             self._set_clicked_coordinate(self.toMapCoordinates(e.pos()))
-            print("left")
 
         if e.button() == Qt.RightButton:
             self._place()
-            print("right")
 
 
     def _set_clicked_coordinate(self, position: QgsPointXY):
@@ -53,4 +53,14 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         )
 
         self._vehicle.place_vehicle(position_cartesian, rotation_polar.a)
-        self.deactivate()
+        self.placed.emit(self._vehicle)
+
+    @property
+    def vehicle(self) -> Vehicle:
+        """Get the vehicle"""
+        return self._vehicle
+
+    @vehicle.setter
+    def vehicle(self, v):
+        """Set a new vehicle"""
+        self._vehicle = v

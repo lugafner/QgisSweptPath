@@ -308,7 +308,8 @@ class QgisSweptPath:
     def _place_vehicle(self):
         # Set vehicle base point with first click and set orientation with second click
         if self.vehicle is not None:
-            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)
+            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
+            self._vehicle_placer.placed.connect(self._vehicle_placed)
             self.canvas.setMapTool(self._vehicle_placer)
         else:
             self.iface.messageBar().pushMessage(
@@ -319,6 +320,11 @@ class QgisSweptPath:
 
         # print(self._vehicle_placer.clicked_point)
         # self.canvas.unsetMapTool(self._vehicle_placer)
+
+    def _vehicle_placed(self):
+        print("placed")
+        self.iface.actionPan().trigger()
+        self._draw_vehicle()
         
     def _draw_vehicle(self):
         self._vehicle_layer.dataProvider().truncate()
