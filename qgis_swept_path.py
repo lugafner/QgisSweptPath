@@ -324,6 +324,7 @@ class QgisSweptPath:
     def _vehicle_placed(self):
         print("placed")
         self.iface.actionPan().trigger()
+        self._create_vehicle_drawing()
         self._draw_vehicle()
         
     def _draw_vehicle(self):
