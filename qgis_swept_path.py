@@ -25,7 +25,7 @@ from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis
-from qgis.gui import QgsGui
+from qgis.gui import QgsGui, QgsMapToolPan
 
 # Initialize Qt resources from file resources.py
 
@@ -323,7 +323,7 @@ class QgisSweptPath:
 
     def _vehicle_placed(self):
         print("placed")
-        self.iface.actionPan().trigger()
+        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
         self._create_vehicle_drawing()
         self._draw_vehicle()
         
