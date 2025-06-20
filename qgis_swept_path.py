@@ -299,14 +299,14 @@ class QgisSweptPath:
                 time.sleep(1)
 
     def _setup_vehicle(self):
-        # TODO: Add a vehicle factory. Currently the most simple vehicle is generated
+        # TODO: Add a vehicle factory
         # trailer = Vehicle()
         # trailer._is_main_vehicle = False  # For testing only
         self.vehicle = MercedesCitaro()
         # self.vehicle.trailer = trailer
 
     def _place_vehicle(self):
-        # Set vehicle base point with first click and set orientation with second click
+        # Place the vehicle with the VehiclePlacer class
         if self.vehicle is not None:
             self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
             self._vehicle_placer.placed.connect(self._vehicle_placed)
@@ -318,12 +318,11 @@ class QgisSweptPath:
                 level=Qgis.Critical
             )
 
-        # print(self._vehicle_placer.clicked_point)
-        # self.canvas.unsetMapTool(self._vehicle_placer)
-
     def _vehicle_placed(self):
-        print("placed")
-        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+        # Unset the VehiclePlacer and draw the vehicle
+        # Method is called, when the VehiclePlacer is finish
+        self.canvas.unsetMapTool(self._vehicle_placer)
+        self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
         self._draw_vehicle()
         
