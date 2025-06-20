@@ -517,3 +517,10 @@ class Vehicle:
         The main vehicle is the driven vehicle. This vehicle could tow a trailer
         """
         return self._is_main_vehicle
+
+    @property
+    def is_placed(self) -> bool:
+        """
+        Returns true, if the vehicle is placed
+        """
+        return self._vehicle_is_placed
