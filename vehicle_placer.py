@@ -1,66 +1,97 @@
 from networkx.classes import selfloop_edges
-from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsMapToolPan
-from qgis.core import QgsPointXY
+from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsRubberBand, QgsGeometryRubberBand, Qgis
+from qgis.core import QgsPointXY, QgsGeometry
 from qgis.PyQt.QtCore import Qt, pyqtSignal
+from qgis.PyQt.QtGui import QColor
 
 from .coord import CoordUtils, PolarCoord, CartesianCoord
 from .vehicle import Vehicle
 
 
 class VehiclePlacer(QgsMapToolEmitPoint):
-    placed = pyqtSignal(Vehicle, name="VehiclePlaced")
+    placed = pyqtSignal(name="VehiclePlaced")
 
     def __init__(self, iface: QgisInterface, vehicle: Vehicle):
         self._iface: QgisInterface = iface
-        self._canvas: QgsMapCanvas = iface.mapCanvas()
         self._vehicle: Vehicle = vehicle
 
-        # First and second point
-        self._base_point: QgsPointXY = QgsPointXY(0.0, 0.0)
-        self._rotation_point: QgsPointXY = QgsPointXY(1.0, 0.0)
-        self._click_counter = 0
-
+        self._canvas: QgsMapCanvas = iface.mapCanvas()
         QgsMapToolEmitPoint.__init__(self, self._canvas)
+
+        # Base point and rotation
+        self._base_point: CartesianCoord = CartesianCoord(0.0, 0.0)
+        self._rotation: float = 0
+
+        self._click_counter = 0
+        self._marker = QgsRubberBand(self._canvas, Qgis.GeometryType.Polygon)
 
 
     def canvasPressEvent(self, e: QgsMapMouseEvent):
         if e.button() == Qt.LeftButton:
-            self._set_clicked_coordinate(self.toMapCoordinates(e.pos()))
+            self._position_clicked(self.toMapCoordinates(e.pos()))
 
         if e.button() == Qt.RightButton:
-            self._place()
+            self._finish_clicked()
 
 
-    def _set_clicked_coordinate(self, position: QgsPointXY):
+    def canvasMoveEvent(self, e: QgsMapMouseEvent):
+        position = self.toMapCoordinates(e.pos())
         if self._click_counter == 0:
-            # Set base point coordinate
-            self._base_point = position
+            self._set_base_point(position)
+            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._draw_marker()
+        else:
+            self._set_rotation(position)
+            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._draw_marker()
+
+
+    def _position_clicked(self, position: QgsPointXY):
+        if self._click_counter == 0:
+            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._draw_marker()
             self._click_counter += 1
         else:
-            # Set rotation point coordinate
-            self._rotation_point = position
+            self._set_rotation(position)
+            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._draw_marker()
             self._click_counter = 0
 
 
-    def _place(self):
-        rotation_polar: PolarCoord = CoordUtils.to_polar(
-            dx=self._rotation_point.x() - self._base_point.x(),
-            dy=self._rotation_point.y() - self._base_point.y()
+    def _set_rotation(self, position: QgsPointXY):
+        self._rotation = CoordUtils.to_polar(
+            dx=position.x() - self._base_point.x,
+            dy=position.y() - self._base_point.y
+        ).a
+
+
+    def _set_base_point(self, position):
+        self._base_point: CartesianCoord = CartesianCoord(
+            x=position.x(),
+            y=position.y()
         )
-        position_cartesian: CartesianCoord = CartesianCoord(
-            x=self._base_point.x(),
-            y=self._base_point.y()
-        )
 
-        self._vehicle.place_vehicle(position_cartesian, rotation_polar.a)
-        self.placed.emit(self._vehicle)
 
-    @property
-    def vehicle(self) -> Vehicle:
-        """Get the vehicle"""
-        return self._vehicle
+    def _draw_marker(self):
+        self._canvas.scene().removeItem(self._marker)
+        self._marker = QgsRubberBand(self._canvas, Qgis.GeometryType.Polygon)  # True = a polygon
+        points = [[
+            QgsPointXY(self._vehicle.fl.x, self._vehicle.fl.y),
+            QgsPointXY(self._vehicle.bl.x, self._vehicle.bl.y),
+            QgsPointXY(self._vehicle.br.x, self._vehicle.br.y),
+            QgsPointXY(self._vehicle.fr.x, self._vehicle.fr.y)
+        ]]
 
-    @vehicle.setter
-    def vehicle(self, v):
-        """Set a new vehicle"""
-        self._vehicle = v
+        self._marker.setToGeometry(QgsGeometry.fromPolygonXY(points), None)
+        self._marker.setStrokeColor(QColor(255, 0, 0))
+        self._marker.setWidth(3)
+
+
+    def _finish_clicked(self):
+        self._canvas.scene().removeItem(self._marker)
+        self._click_counter = 0
+        self._iface.actionPan().trigger()
+        self.placed.emit()
+
+    def deactivate(self):
+        self._canvas.scene().removeItem(self._marker)
