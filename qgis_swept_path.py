@@ -26,6 +26,9 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis
 from qgis.gui import QgsGui, QgsMapToolPan
+from threading import Thread
+
+import time
 
 # Initialize Qt resources from file resources.py
 
@@ -34,8 +37,7 @@ from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
 import os.path
 
 # Import SweptPath code
-from threading import Thread
-import time
+
 from .vehicle import Vehicle
 from .vehicles.mercedes_citaro import MercedesCitaro
 from .coord import CartesianCoord, CoordUtils
@@ -82,9 +84,12 @@ class QgisSweptPath:
             # dockwidget may not exist if:
             #    first run of plugin
             #    removed on close (see self.onClosePlugin method)
-            if self.dockwidget == None:
-                # Create the dockwidget (after translation) and keep reference
+            if self.dockwidget is None:
+                # Create the dockwidget
                 self.dockwidget = QgisSweptPathDockWidget()
+
+                # Setup Controls
+                self.setupControls()
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -96,9 +101,6 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
 
-            # Setup Controls
-            self.setupControls()
-
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
@@ -106,15 +108,30 @@ class QgisSweptPath:
     def setupControls(self):
         """Adds all actions for the controls"""
         # Actions
-        self.add_action("Steer left", self.steer_left, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+J")
-        self.add_action("Steer right", self.steer_right, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+L")
-        self.add_action("Speed up", self.speed_up, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+IJ")
-        self.add_action("Speed down", self.speed_down, add_to_menu=True, parent=self.iface.mainWindow(), shortcut="Ctrl+Shift+K")
+        self.add_action("Steer left",
+                        self.steer_left,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+J")
+        self.add_action("Steer right",
+                        self.steer_right,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+L")
+        self.add_action("Speed up",
+                        self.speed_up,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+I")
+        self.add_action("Speed down",
+                        self.speed_down,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+K")
 
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
         icon_path = ":/plugins/qgis_swept_path/icon.png"
         self.add_action(
             text="QgisSweptPath",
@@ -122,12 +139,13 @@ class QgisSweptPath:
             icon_path=icon_path,
             enabled_flag=True,
             add_to_menu=True,
-            parent=self.iface.mainWindow())      
+            parent=self.iface.mainWindow())
 
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
         # disconnects
+        self.stopSimulation()
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
         self.pluginIsActive = False
 
