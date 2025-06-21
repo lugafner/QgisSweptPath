@@ -1,14 +1,13 @@
 import math
 
 from .coord import PolarCoord, CartesianCoord, CoordUtils
-from .simple_logger import PathLogger
 
 
 class Vehicle:
     def __init__(self):
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
-        self._vehicle_name: str = "VEHICLE"
+        self._vehicle_name: str = "Vehicle"
         # Body
         self._body_length: float = 15.00  # meter
         self._body_width: float = 2.50  # meter
@@ -66,9 +65,6 @@ class Vehicle:
         # Setup vehicle shape
         self._init_vehicle_shape()
 
-        # Debugging
-        self._path_logger = PathLogger()
-
 
     def _init_vehicle_shape(self):
         # Vehicle local crs (polar from F)
@@ -104,13 +100,6 @@ class Vehicle:
             self._local_point_fwl: PolarCoord = CoordUtils.to_polar(0.0, self._wheel_side_offset)
             self._local_point_fwr: PolarCoord = CoordUtils.to_polar(0.0, - self._wheel_side_offset)
 
-        # TODO: Remove, if the vehicle is always placed first
-        # Initialise vehicle position
-        # self._global_f = CartesianCoord(0.0, 0.0)  # Initialize reference point with 0, 0
-        # self._global_h = CartesianCoord(- self._wheelbase, 0.0)
-        # self._global_a: float = self._calc_azimuth()  # Initialize azimuth (get from f and h)
-        # self._global_cp: CartesianCoord = self._calc_global_coord(self._local_point_cp)
-        
 
     def _update_vehicle_parts(self):
         """
@@ -161,25 +150,6 @@ class Vehicle:
         return cartesian_shift + reference_point
 
 
-    def _draw(self):
-        if self._has_body: self._draw_body()
-        if self._has_front_axle: self._draw_front_axle()
-        if self._has_rear_axle: self._draw_rear_axle()
-
-    def _draw_body(self):
-        self._global_bl: CartesianCoord = self._calc_global_coord(self._local_point_bl)
-        self._global_fl: CartesianCoord = self._calc_global_coord(self._local_point_fl)
-        self._global_br: CartesianCoord = self._calc_global_coord(self._local_point_br)
-        self._global_fr: CartesianCoord = self._calc_global_coord(self._local_point_fr)
-
-    def _draw_front_axle(self):
-        self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
-        self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
-
-    def _draw_rear_axle(self):
-        self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
-        self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
-
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
         Place the vehicle at a given point and calculate the base point h
@@ -197,9 +167,6 @@ class Vehicle:
         # Place trailer
         if self._trailer:
             self._trailer.place_vehicle(self._global_cp, self._global_a)
-
-        # Draw the rest of the body points
-        if self._do_drawing: self._draw()
 
         self._vehicle_is_placed = True
 
@@ -256,28 +223,10 @@ class Vehicle:
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
         self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
 
-
-        # Log path
-        self._path_logger.write_log(
-            self._get_front_wheel_radius(),
-            self._get_rear_wheel_radius(),
-            self._get_center_angle(),
-            self.steering_angle,
-            self._wheelbase,
-            self._global_a,
-            self._global_f.x,
-            self._global_f.y,
-            self._global_h.x,
-            self._global_h.y
-        )
-
         # After calculating the points f and h, the global vehicle azimuth must be recalculated
         # before the other coordinates are calculated
         self._global_a = self._calc_azimuth()
         self._global_cp = self._calc_global_coord(self._local_point_cp)
-
-        # Draw the rest of the body points
-        if self._do_drawing: self._draw()
 
         # Simulate trailer
         if self._trailer:
@@ -317,6 +266,7 @@ class Vehicle:
         if self._speed >= 6.94:
             self.speed_down()
 
+
     def speed_down(self):
         """Decrease vehicle speed"""
         self._speed -= self._speed_down_steps
@@ -326,17 +276,20 @@ class Vehicle:
         if self._speed <= -6.94:
             self.speed_up()
 
+
     def steer_left(self):
         """Increase wheel angle, if the max steering angle is not exceeded"""
         new_angle = self._steering_angle + (self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps)
         if self._max_steering_angle >= new_angle:
             self._steering_angle = new_angle
 
+
     def steer_right(self):
         """Increase wheel angle, if the max steering angle is not exceeded"""
         new_angle = self._steering_angle - (self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps)
         if self._max_steering_angle * -1 <= new_angle:
             self._steering_angle = new_angle
+
 
     # Properties
     @property
@@ -379,10 +332,20 @@ class Vehicle:
         """Current speed in m/s"""
         return self._speed
 
+    @speed.setter
+    def speed(self, v):
+        """Sets the vehicle speed"""
+        self._speed = v
+
     @property
     def steering_angle(self) -> float:
         """Current wheel angle in radians"""
         return self._steering_angle
+
+    @steering_angle.setter
+    def steering_angle(self, v):
+        """Sets the steering angle"""
+        self._steering_angle = v
 
     @property
     def simulation_step(self) -> float:
@@ -412,42 +375,42 @@ class Vehicle:
     @property
     def bl(self) -> CartesianCoord:
         """Global Coordinate of point bl"""
-        return self._global_bl
+        return self._calc_global_coord(self._local_point_bl)
 
     @property
     def rwl(self) -> CartesianCoord:
         """Global Coordinate of point rwl"""
-        return self._global_rwl
+        return self._calc_global_coord(self._local_point_rwl)
 
     @property
     def fwl(self) -> CartesianCoord:
         """Global Coordinate of point fwl"""
-        return self._global_fwl
+        return self._calc_global_coord(self._local_point_fwl)
 
     @property
     def fl(self) -> CartesianCoord:
         """Global Coordinate of point fl"""
-        return self._global_fl
+        return self._calc_global_coord(self._local_point_fl)
 
     @property
     def br(self) -> CartesianCoord:
         """Global Coordinate of point br"""
-        return self._global_br
+        return self._calc_global_coord(self._local_point_br)
 
     @property
     def rwr(self) -> CartesianCoord:
         """Global Coordinate of point rwr"""
-        return self._global_rwr
+        return self._calc_global_coord(self._local_point_rwr)
 
     @property
     def fwr(self) -> CartesianCoord:
         """Global Coordinate of point fwr"""
-        return self._global_fwr
+        return self._calc_global_coord(self._local_point_fwr)
 
     @property
     def fr(self) -> CartesianCoord:
         """Global Coordinate of point fr"""
-        return self._global_fr
+        return self._calc_global_coord(self._local_point_fr)
 
     @property
     def cp(self) -> CartesianCoord:
