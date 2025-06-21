@@ -1,5 +1,6 @@
 from qgis.core import QgsPointXY
 
+from .vehicle import Vehicle
 from .coord import CartesianCoord
 
 
@@ -7,24 +8,29 @@ class PathPoints:
     """
     Class to store the path points during simulation
     """
-
     def __init__(self,
+                 vehicle: Vehicle,
                  vehicle_name: str,
                  vehicle_type: str,
                  vehicle_part_type: str,
                  vehicle_part: str):
         """
         Init a new path point
+        @param vehicle: Reference to the vehicle
         @param vehicle_name: Vehicle name (from vehicle class)
         @param vehicle_type: Type main or trailer
         @param vehicle_part_type: Part type wheels or body
         @param vehicle_part: Point name of the vehicle i.e. fwl, fl, br
         """
         self._points: list[CartesianCoord] = []  # List of the points
+        self._vehicle: Vehicle = vehicle
         self._vehicle_name: str = vehicle_name  # Vehicle name (from vehicle class)
         self._vehicle_type: str = vehicle_type  # Type main or trailer
         self._vehicle_part_type: str = vehicle_part_type  # Part type wheels or body
         self._vehicle_part: str = vehicle_part  # Point name of the vehicle i.e. fwl, fl, br
+
+    def __str__(self):
+        return "{}. Points: {}".format(self.vehicle_name, len(self._points))
 
     def add_point(self, point: CartesianCoord):
         """
@@ -44,6 +50,11 @@ class PathPoints:
             point_list.append(QgsPointXY(p.x, p.y))
 
         return point_list
+
+    @property
+    def vehicle(self) -> Vehicle:
+        """ Returns a reference tho the vehicle """
+        return self._vehicle
 
     @property
     def vehicle_name(self) -> str:
