@@ -8,6 +8,7 @@ class Vehicle:
     def __init__(self):
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
+        self._vehicle_name: str = "VEHICLE"
         # Body
         self._body_length: float = 15.00  # meter
         self._body_width: float = 2.50  # meter
@@ -524,3 +525,10 @@ class Vehicle:
         Returns true, if the vehicle is placed
         """
         return self._vehicle_is_placed
+
+    @property
+    def vehicle_name(self) -> str:
+        """
+        Returns the vehicle name
+        """
+        return self._vehicle_name

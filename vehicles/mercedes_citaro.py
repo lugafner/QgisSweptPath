@@ -8,6 +8,8 @@ class MercedesCitaro(Vehicle):
         super().__init__()
 
         # Set up all needed parameters
+        self._vehicle_name = "Mercedes Citaro"
+
         # Body
         self._body_length = 12.135  # meter
         self._body_width = 2.550  # meter
