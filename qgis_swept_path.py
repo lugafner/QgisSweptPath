@@ -24,8 +24,8 @@
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis
-from qgis.gui import QgsGui, QgsMapToolPan
+from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsSettings, QgsProject
+from qgis.gui import QgsGui
 from threading import Thread
 
 import time
@@ -65,14 +65,20 @@ class QgisSweptPath:
         self.pluginIsActive = False
         self.dockwidget = None
 
+        # Qgis property strings
+        self._property_strings: dict[str, str] = {
+            "vehicle_layer_id": "qgissweptpath/vehicle_layer",
+            "path_layer_id": "qgissweptpath/path_layer"
+        }
+
         # SweptPath fields
         self.simulation_running: bool = False  # Simulation is running
         self._simulation_id: str = ""  # Simulation ID for layer features identification
-        
         self.vehicle: Vehicle = None  # The vehicle to simulate
 
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
+        self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
 
     def run(self):
@@ -101,6 +107,8 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
 
+            self.setupLayers()
+
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
@@ -128,6 +136,56 @@ class QgisSweptPath:
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+K")
+
+    def setupLayers(self):
+        """
+        Method is called on plugin start.
+
+        Try to load the layers (vehicle and path) from the stored ids in the project settings
+        If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
+        (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
+        """
+        # Get the layer ids from the Qgis settings
+        settings = QgsSettings()
+        vehicle_layer_id = settings.value(self._property_strings["vehicle_layer_id"], None)
+        path_layer_id = settings.value(self._property_strings["path_layer_id"], None)
+
+        # Vehicle layer
+        if vehicle_layer_id is None:
+            # Create new layer if there is no id stored in the project
+            self._create_vehicle_layer()
+        else:
+            # Get the layer by the id
+            vehicle_layer = QgsProject.instance().mapLayer(vehicle_layer_id)
+            if vehicle_layer is None:
+                # If the layer is not available create new layer
+                self.iface.messageBar().pushMessage(
+                    "Vehicle layer not available",
+                    "The stored vehicle layer is not available. A new vehicle layer will be created and saved in this project",
+                    level=Qgis.Info
+                )
+                self._create_vehicle_layer()
+            else:
+                # Save reference to the existing layer and show the id in the text field
+                self._vehicle_layer = vehicle_layer
+                self.dockwidget.txtVehicleLayer.setText(vehicle_layer_id)
+
+        # Path layer (details see vehicle layer above)
+        if path_layer_id is None:
+            self._create_path_layer()
+        else:
+            path_layer = QgsProject.instance().mapLayer(path_layer_id)
+            if path_layer is None:
+                self.iface.messageBar().pushMessage(
+                    "Path layer not available",
+                    "The stored path layer is not available. A new path layer will be created and saved in this project",
+                    level=Qgis.Info
+                )
+                self._create_path_layer()
+            else:
+                self._path_layer = path_layer
+                self.dockwidget.txtPathLayer.setText(path_layer_id)
+
 
 
     def initGui(self):
@@ -374,16 +432,49 @@ class QgisSweptPath:
 
     def _create_layers(self):
         if self._vehicle_layer is None:
-            self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
-            crs = self._vehicle_layer.crs()
-            crs.createFromId(2056)
-            self._vehicle_layer.setCrs(crs)
-            
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("size_x", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("size_y", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Double)])
-            self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_angle", QVariant.Double)])
-            self._vehicle_layer.updateFields()
+            self._create_vehicle_layer()
+
+        if self._path_layer is None:
+            self._create_path_layer()
+
+    def _create_vehicle_layer(self):
+        """
+        Create a new in memory vector layer to show the vehicle during simulation
+        """
+        if self._vehicle_layer is not None:
+            # Print the message, when the vehicle layer already exists
+            self.iface.messageBar().pushMessage(
+                "Vehicle layer not available",
+                "The stored vehicle layer is not available. A new vehicle layer will be created and saved in this project",
+                level=Qgis.Info
+            )
+
+        # Create new vector layer and set Crs to project crs
+        self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
+        crs = QgsProject.instance().crs()
+        # crs.createFromId(2056)
+        self._vehicle_layer.setCrs(crs)
+
+        # Add the attributes
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("symbol", QVariant.String)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("rotation", QVariant.Double)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("size_x", QVariant.Double)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("size_y", QVariant.Double)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_x", QVariant.Double)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("offset_y", QVariant.Double)])
+        self._vehicle_layer.dataProvider().addAttributes([QgsField("wheel_angle", QVariant.Double)])
+        self._vehicle_layer.updateFields()
+
+        # Add layer as new map layer
+        QgsProject.instance().addMapLayer(self._vehicle_layer)
+
+        # Save the id of the map layer in the project and show the id in the text field
+        settings = QgsSettings()
+        vehicle_layer_id = self._vehicle_layer.id()
+        settings.setValue(self._property_strings["vehicle_layer_id"], vehicle_layer_id)
+        self.dockwidget.txtVehicleLayer.setText(vehicle_layer_id)
+
+    def _create_path_layer(self):
+        # TODO: Create path layer and store id in properties
+
+        pass
