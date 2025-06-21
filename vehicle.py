@@ -27,7 +27,8 @@ class Vehicle:
         
         # Vehicle type (init with True for standard vehicle)
         self._has_body: bool = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
-        self._has_front_axle: bool = True  # when false, no front axle will be drawn (i.e. semitrailer)
+        self._has_front_axle: bool = True  # When false, no front axle will be drawn (i.e. semitrailer)
+        self._has_rear_axle: bool = True  # When false, no rear axle will be drawn
 
         # Graphics
         self._symbol: str = "./vehicles/vehicle.svg"
@@ -163,21 +164,21 @@ class Vehicle:
     def _draw(self):
         if self._has_body: self._draw_body()
         if self._has_front_axle: self._draw_front_axle()
-
+        if self._has_rear_axle: self._draw_rear_axle()
 
     def _draw_body(self):
         self._global_bl: CartesianCoord = self._calc_global_coord(self._local_point_bl)
         self._global_fl: CartesianCoord = self._calc_global_coord(self._local_point_fl)
         self._global_br: CartesianCoord = self._calc_global_coord(self._local_point_br)
         self._global_fr: CartesianCoord = self._calc_global_coord(self._local_point_fr)
-        self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
-        self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
-
 
     def _draw_front_axle(self):
         self._global_fwl: CartesianCoord = self._calc_global_coord(self._local_point_fwl)
         self._global_fwr: CartesianCoord = self._calc_global_coord(self._local_point_fwr)
 
+    def _draw_rear_axle(self):
+        self._global_rwl: CartesianCoord = self._calc_global_coord(self._local_point_rwl)
+        self._global_rwr: CartesianCoord = self._calc_global_coord(self._local_point_rwr)
 
     def place_vehicle(self, f:CartesianCoord, a:float):
         """ 
@@ -510,6 +511,13 @@ class Vehicle:
         Returns true if the vehicle has a body, which will also be drawn
         """
         return self._has_body
+
+    @property
+    def has_rear_axle(self) -> bool:
+        """
+        Returns true if the vehicle has a rear axle, which will also be drawn
+        """
+        return self._has_rear_axle
 
     @property
     def is_main_vehicle(self) -> bool:

@@ -29,6 +29,7 @@ class MercedesCitaro(Vehicle):
         # Vehicle type
         self._has_body = True
         self._has_front_axle  = True
+        self._has_rear_axle = True
 
         # Graphics
         self._symbol = "./mercedes_citaro.svg"
