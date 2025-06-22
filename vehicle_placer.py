@@ -129,6 +129,7 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         Method is called, when the right mouse button is pressed
         The placement process will be stopped
         """
+        self._vehicle.steering_angle = 0
         self._canvas.scene().removeItem(self._marker)  # Remove the rubber band
         self._click_counter = 0  # Set click counter to always start with positioning
         self.placed.emit()  # Emit the signal, that the vehicle is placed
