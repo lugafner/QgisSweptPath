@@ -26,7 +26,7 @@ from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsSettings, QgsProject, QgsVectorFileWriter
-from qgis.gui import QgsGui
+from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
 from threading import Thread
 from uuid import uuid4
 
@@ -569,21 +569,44 @@ class QgisSweptPath:
         self._path_layer.updateFields()
 
         # Add layer as new map layer
-        QgsProject.instance().addMapLayer(self._vehicle_layer)
-
-        # save_options = QgsVectorFileWriter.SaveVectorOptions()
-        # transform_context = QgsProject.instance().transformContext()
-        # error = QgsVectorFileWriter.writeAsVectorFormatV3(self._path_layer,
-        #                                                   "./my_new_file.gpkg",
-        #                                                   transform_context,
-        #                                                   save_options)
-        # if error[0] == QgsVectorFileWriter.NoError:
-        #     print("success!")
-        # else:
-        #     print(error)
+        QgsProject.instance().addMapLayer(self._path_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
         settings = QgsSettings()
         path_layer_id = self._path_layer.id()
         settings.setValue(self._property_strings["path_layer_id"], path_layer_id)
         self.dockwidget.txtPathLayer.setText(path_layer_id)
+
+        # Show dialog to save the path layer to file/database
+        save_dialog = QgsVectorLayerSaveAsDialog(self._path_layer, QgsVectorLayerSaveAsDialog.Option.Symbology)
+        if save_dialog.exec():
+            # If dialog returns true
+            save_options = QgsVectorFileWriter.SaveVectorOptions()  # Create save options
+            save_options.layerName = save_dialog.layerName()  # Set layer name
+            transform_context = QgsProject.instance().transformContext()  # Transform context
+            # Save layer to file
+            writer_error = QgsVectorFileWriter.writeAsVectorFormatV3(self._path_layer,
+                                                              save_dialog.fileName(),
+                                                              transform_context,
+                                                              save_options)
+
+            if writer_error[0] == QgsVectorFileWriter.NoError:
+                # When saved successfully, set the data source to the saved layer
+                self._path_layer.setDataSource(
+                    "{}|layername={}".format(save_dialog.fileName(), save_dialog.layerName()),
+                    self._path_layer.name(),
+                    'ogr')
+            else:
+                # On error show message and keep local layer
+                self.iface.messageBar().pushWarning(
+                    "Local path layer",
+                    "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
+                    "when the project is closed. The created layer must be saved manually",
+                )
+        else:
+            # On error or when canceled show message and keep local layer
+            self.iface.messageBar().pushWarning(
+                "Local path layer",
+                "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
+                "when the project is closed. The created layer must be saved manually",
+            )
