@@ -8,6 +8,8 @@ class MercedesCitaro(Vehicle):
         super().__init__()
 
         # Set up all needed parameters
+        self._vehicle_name = "Mercedes Citaro"
+
         # Body
         self._body_length = 12.135  # meter
         self._body_width = 2.550  # meter
@@ -27,6 +29,7 @@ class MercedesCitaro(Vehicle):
         # Vehicle type
         self._has_body = True
         self._has_front_axle  = True
+        self._has_rear_axle = True
 
         # Graphics
         self._symbol = "./mercedes_citaro.svg"
