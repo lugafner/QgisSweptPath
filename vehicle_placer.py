@@ -1,6 +1,6 @@
-from networkx.classes import selfloop_edges
-from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsRubberBand, QgsGeometryRubberBand, Qgis
-from qgis.core import QgsPointXY, QgsGeometry
+
+from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsRubberBand
+from qgis.core import QgsPointXY, QgsGeometry, Qgis
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 
