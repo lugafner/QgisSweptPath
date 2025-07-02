@@ -1,4 +1,7 @@
 import math
+import inspect
+
+from pathlib import Path
 
 from .coord import PolarCoord, CartesianCoord, CoordUtils
 
@@ -291,6 +294,10 @@ class Vehicle:
             self._steering_angle = new_angle
 
 
+    def get_symbol_path(self) -> str:
+        """Returns the absolute file path of the symbol"""
+        return str(Path(inspect.getfile(self.__class__)).parent / Path(self._symbol))
+
     # Properties
     @property
     def do_drawing(self) -> bool:
@@ -419,7 +426,7 @@ class Vehicle:
 
     @property
     def symbol(self) -> str:
-        """The path to the symbol used for drawing"""
+        """The relative path to the symbol used for drawing"""
         return self._symbol
     
     @property
