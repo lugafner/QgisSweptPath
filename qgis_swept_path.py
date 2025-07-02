@@ -41,7 +41,9 @@ import os.path
 # Import SweptPath code
 
 from .vehicle import Vehicle
-from .vehicles.mercedes_citaro import MercedesCitaro
+from .vehicles.mercedes_citaro_g import MercedesCitaroG
+from .vehicles.mercedes_citaro_g_trailer import MercedesCitaroGTrailer
+
 from .coord import CartesianCoord, CoordUtils
 from .vehicle_placer import VehiclePlacer
 from .path_points import PathPoints
@@ -429,10 +431,9 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory
-        # trailer = Vehicle()
-        # trailer._is_main_vehicle = False  # For testing only
-        self.vehicle = MercedesCitaro()
-        # self.vehicle.trailer = trailer
+        trailer = MercedesCitaroGTrailer()
+        self.vehicle = MercedesCitaroG()
+        self.vehicle.trailer = trailer
 
     def _place_vehicle(self):
         # Place the vehicle with the VehiclePlacer class
