@@ -470,7 +470,7 @@ class QgisSweptPath:
         self._vehicle_layer.dataProvider().truncate()
         for v in self.vehicle.vehicle_parts:
             feature = QgsFeature(self._vehicle_layer.fields())
-            feature["symbol"] = v.symbol
+            feature["symbol"] = v.get_symbol_path()
             feature["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
             feature["size_x"] = v.symbol_size_x
             feature["size_y"] = v.symbol_size_y
