@@ -33,7 +33,7 @@ class MercedesCitaroG(Vehicle):
         self._has_rear_axle = True
 
         # Graphics
-        self._symbol = "C:/Users/lukas.gafner/AppData/Roaming/QGIS/QGIS3/profiles/LUG/python/plugins/QgisSweptPath/vehicles/mercedes_citaro_g.svg"
+        self._symbol = "./mercedes_citaro_g.svg"
         self._symbol_size_x = 10.530  # SVG symbol size x in QGIS style units (usually meters)
         self._symbol_size_y = 2.550  # SVG symbol size y in QGIS style units (usually meters)
         # Offset to Place the symbol. Base point is point F.
