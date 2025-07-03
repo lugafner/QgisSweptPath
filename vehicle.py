@@ -97,7 +97,7 @@ class Vehicle:
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
             self._local_point_br: PolarCoord = CoordUtils.to_polar(- back_distance, - body_side_offset)
             self._local_point_rwr: PolarCoord = CoordUtils.to_polar(- self._wheelbase, - self._wheel_side_offset)
-            self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - self._wheel_side_offset)
+            self._local_point_fr: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, - body_side_offset)
 
         if self._has_body and self._has_front_axle:
             self._local_point_fwl: PolarCoord = CoordUtils.to_polar(0.0, self._wheel_side_offset)
