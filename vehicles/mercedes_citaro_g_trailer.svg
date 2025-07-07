@@ -27,16 +27,6 @@
     />
     </g>
 
-    <g>
-    <!-- Trailer connection point -->
-    <circle
-        cx="75.95"
-        cy="12.75"
-        r="1"
-        fill="black"
-    />
-    </g>
-
     <g transform="translate(34.30 12.75)">
     <!-- back wheels (origin rear axle center point -->
         <rect
