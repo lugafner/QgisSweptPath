@@ -85,7 +85,7 @@ class QgisSweptPath:
 
         # Controls the printing iteration
         self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
-        self._print_interval: int = 10  # Interval. Each nth step the vehicle point will be stored/printed
+        self._print_interval: int = 1  # Interval. Each nth step the vehicle point will be stored/printed
 
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
