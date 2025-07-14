@@ -87,7 +87,7 @@ class QgisSweptPath:
 
         # Controls the printing iteration
         self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
-        self._print_interval: int = 1  # Interval. Each nth step the vehicle point will be stored/printed
+        self._print_interval: int = 10  # Interval. Each nth step the vehicle point will be stored/printed
 
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
@@ -380,11 +380,13 @@ class QgisSweptPath:
         self.simulation_running = False
         self.update_status()
         if self._print_path:
+            if self._print_iteration != 0:
+                self._print_iteration = self._print_interval
+                self._store_path_points()
+                
             self._write_path_to_layer()
 
-
     def startSimulation(self):
-
         if (self.dockwidget.txtSimulationId.text() is None
                 or len(str(self.dockwidget.txtSimulationId.text()).strip()) < 1)\
                 or self._simulation_id == str(self.dockwidget.txtSimulationId.text()).strip():
@@ -416,6 +418,7 @@ class QgisSweptPath:
             )
 
     def simulate(self):
+        self._print_iteration = self._print_interval  # Set iteration to interval so the point will be printed on first step
         points = []
         while self.simulation_running:
             if self.vehicle.speed > 0.05:
