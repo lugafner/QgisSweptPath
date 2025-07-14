@@ -192,9 +192,9 @@ class Vehicle:
     def _get_center_angle(self) -> float:
         """
         Calculate the center angle of one step.
-        Calculation based on step distance of the rear wheel point h along the driving arch
+        Calculation based on step distance of the front wheel point f along the driving arch
         """
-        return float(self._simulation_step / self._get_rear_wheel_radius())
+        return float(self._simulation_step / self._get_front_wheel_radius())
 
     def _get_driving_vector_front(self) -> PolarCoord:
         center_angle = self._get_center_angle()
