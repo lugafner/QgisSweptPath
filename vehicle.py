@@ -224,11 +224,8 @@ class Vehicle:
 
         # Calculate the global points f and h
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
-        self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
-
-        # After calculating the points f and h, the global vehicle azimuth must be recalculated
-        # before the other coordinates are calculated
         self._global_a = self._calc_azimuth()
+        self._global_h = self._calc_global_coord(self._local_point_h)
         self._global_cp = self._calc_global_coord(self._local_point_cp)
 
         # Simulate trailer
