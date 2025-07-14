@@ -181,7 +181,8 @@ class Vehicle:
         """
         return float(self._wheelbase / math.cos(math.pi / 2.0 - self._steering_angle))
 
-
+    # Not used since rear wheel path is calculated on straight segments
+    # Function kept for later use when simulating rear wheel steering
     def _get_rear_wheel_radius(self) -> float:
         """
         Calculate the radius, on which the rear wheel point (h) drives
@@ -203,6 +204,8 @@ class Vehicle:
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
+    # Not used since rear wheel path is calculated on straight segments
+    # Function kept for later use when simulating rear wheel steering
     def _get_driving_vector_rear(self) -> PolarCoord:
         center_angle = self._get_center_angle()
         outer_angle = (math.pi  - center_angle) / 2
@@ -217,18 +220,14 @@ class Vehicle:
         """
         if abs(self._steering_angle) > 0.0:
             front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front()
-            rear_wheel_driving_vector: PolarCoord = self._get_driving_vector_rear()
         else:
             front_wheel_driving_vector = PolarCoord(self._simulation_step, 0.0)
-            rear_wheel_driving_vector = PolarCoord(self._simulation_step, 0.0)
 
-        # Calculate the global points f and h
+        # Calculate the global point f
+        # Recalculate a and the other global points h and cp
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
-        self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
-
-        # After calculating the points f and h, the global vehicle azimuth must be recalculated
-        # before the other coordinates are calculated
         self._global_a = self._calc_azimuth()
+        self._global_h = self._calc_global_coord(self._local_point_h)
         self._global_cp = self._calc_global_coord(self._local_point_cp)
 
         # Simulate trailer
