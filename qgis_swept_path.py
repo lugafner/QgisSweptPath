@@ -223,12 +223,16 @@ class QgisSweptPath:
                 p_type = "wheel"
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "fwl"))
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "fwr"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "fwlb"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "fwrb"))
 
             if v.has_rear_axle:
                 p_type = "wheel"
                 # Setup rear axle points
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "rwl"))
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "rwr"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "rwlb"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "rwrb"))
 
 
     def initGui(self):
@@ -383,7 +387,7 @@ class QgisSweptPath:
             if self._print_iteration != 0:
                 self._print_iteration = self._print_interval
                 self._store_path_points()
-                
+
             self._write_path_to_layer()
 
     def startSimulation(self):
