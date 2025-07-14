@@ -114,3 +114,15 @@ class CoordUtils:
         @return Angle in radians
         """
         return a * math.pi / 180.0
+
+    @staticmethod
+    def get_azimuth(cartesian_coord_a: CartesianCoord, cartesian_coord_b: CartesianCoord) ->  float:
+        """ Get global azimuth between two cartesian points in radians
+
+        @param cartesian_coord_a: First cartesian point
+        @param cartesian_coord_b: Second cartesian point
+        @return Azimuth in radians
+        """
+        delta_polar = CoordUtils.to_polar(cartesian_coord_b.x - cartesian_coord_a.x,
+                                      cartesian_coord_b.y - cartesian_coord_a.y)
+        return delta_polar.a
