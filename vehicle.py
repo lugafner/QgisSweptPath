@@ -184,7 +184,8 @@ class Vehicle:
         Calculate the radius, on which the front wheel point (f) drives
         Can only be calculated when the wheels are turned
         """
-        return float(self._wheelbase / math.cos(math.pi / 2.0 - self._steering_angle))
+        print(self._wheelbase / math.sin(self._steering_angle))
+        return float(self._wheelbase / math.sin(self._steering_angle))
 
     # Not used since rear wheel path is calculated on straight segments
     # Function kept for later use when simulating rear wheel steering
@@ -193,7 +194,7 @@ class Vehicle:
         Calculate the radius, on which the rear wheel point (h) drives
         Can only be calculated when the wheels are turned
         """
-        return float(self._wheelbase * math.tan(math.pi / 2.0 - self._steering_angle))
+        return float(self._wheelbase / math.tan(self._steering_angle))
 
     def _get_center_angle(self) -> float:
         """
@@ -217,7 +218,6 @@ class Vehicle:
         driving_vector_angle = (math.pi / 2) - outer_angle
         driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
-
 
     def _drive(self):
         """
