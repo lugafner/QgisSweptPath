@@ -36,6 +36,7 @@ import time
 
 # Import the code for the DockWidget
 from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
+from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 import os.path
 
 # Import SweptPath code
@@ -72,6 +73,7 @@ class QgisSweptPath:
 
         self.pluginIsActive = False
         self.dockwidget = None
+        self.properties = None
 
         # Qgis property strings
         self._property_strings: dict[str, str] = {
@@ -107,6 +109,7 @@ class QgisSweptPath:
             if self.dockwidget is None:
                 # Create the dockwidget
                 self.dockwidget = QgisSweptPathDockWidget()
+                self.properties = QgisSweptPathDockWidgetProp()
 
                 # Setup Controls
                 self.setupControls()
@@ -120,6 +123,7 @@ class QgisSweptPath:
             self.dockwidget.btnAddPathLayer.clicked.connect(self._create_path_layer)
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
+            self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
 
             self.setupLayers()
 
@@ -428,12 +432,10 @@ class QgisSweptPath:
 
     def simulate(self):
         self._print_iteration = self._print_interval  # Set iteration to interval so the point will be printed on first step
-        points = []
         while self.simulation_running:
             if self.vehicle.speed > 0.05:
                 self.vehicle.step()
-                point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
-                points.append(point)
+
                 if not self.canvas.isDrawing():
                     self._draw_vehicle()
                 time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
@@ -626,3 +628,8 @@ class QgisSweptPath:
                 "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
                 "when the project is closed. The created layer must be saved manually",
             )
+
+
+    def _show_properties(self):
+        self.properties.show()
+
