@@ -349,10 +349,10 @@ class QgisSweptPath:
             self.dockwidget.lblStatus.setText("Status")
 
     def update_speed(self):
-        self.dockwidget.txtSpeed.setText(str(self.vehicle.speed))
+        self.dockwidget.txtSpeed.setText("{:.2f} km/h".format(self.vehicle.speed * 3.6))
 
     def update_steering(self):
-        self.dockwidget.txtSteeringAngle.setText(str(self.vehicle.steering_angle / 3.14159 * 180))
+        self.dockwidget.txtSteeringAngle.setText("{:.2f} °".format(self.vehicle.steering_angle / 3.14159 * 180))
 
     def speed_up(self):
         if self.simulation_running:
@@ -382,7 +382,6 @@ class QgisSweptPath:
 
 
     def startSimulation(self):
-
         if (self.dockwidget.txtSimulationId.text() is None
                 or len(str(self.dockwidget.txtSimulationId.text()).strip()) < 1)\
                 or self._simulation_id == str(self.dockwidget.txtSimulationId.text()).strip():
