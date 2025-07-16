@@ -1,0 +1,58 @@
+<svg
+    width="68.45"
+    height="25.50"
+    viewBox="0 0 68.45 25.50"
+    xmlns="http://www.w3.org/2000/svg">
+
+    <style>
+        .body {
+            stroke-width: 1;
+            stroke: black;
+            fill: white;
+        }
+        .wheel {
+            fill: black;
+        }
+    </style>
+
+    <g>
+    <!-- vehicle body (origin top left)-->
+    <rect
+        class="body"
+        x="0.5"
+        y="0.5"
+        width="59.15"
+        height="24.5"
+        rx="1"
+    />
+    </g>
+
+    <g transform="translate(26.60 12.75)">
+    <!-- back wheels (origin rear axle center point -->
+        <rect
+            id="left_rear_wheel"
+            class="wheel"
+            x="-4.785"
+            y="-12.0"
+            width="9.57"
+            height="2.75"
+            rx="1"
+        />
+        <rect
+            id="right_rear_wheel"
+            class="wheel"
+            x="-4.785"
+            y="9.25"
+            width="9.57"
+            height="2.75"
+            rx="1"
+        />
+        <circle
+            id="rear_axle_center_point"
+            cx="0"
+            cy="0"
+            r="0.5"
+            fill="black"
+        />
+    </g>
+</svg>
