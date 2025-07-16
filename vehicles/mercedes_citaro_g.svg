@@ -19,21 +19,11 @@
     <!-- vehicle body (origin top left)-->
     <rect
         class="body"
-        x="7.81"
+        x="8.56"
         y="0.5"
         width="96.44"
         height="24.5"
         rx="1"
-    />
-    </g>
-
-    <g>
-    <!-- Trailer connection point -->
-    <circle
-        cx="0.0"
-        cy="12.75"
-        r="1"
-        fill="black"
     />
     </g>
 

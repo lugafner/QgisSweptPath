@@ -41,8 +41,11 @@ import os.path
 # Import SweptPath code
 
 from .vehicle import Vehicle
+from .vehicles.mercedes_citaro import MercedesCitaro
 from .vehicles.mercedes_citaro_g import MercedesCitaroG
 from .vehicles.mercedes_citaro_g_trailer import MercedesCitaroGTrailer
+from .vehicles.gelenkbus_18_75 import Gelenkbus1875
+from .vehicles.gelenkbus_18_75_trailer import Gelenkbus1875Trailer
 
 from .coord import CartesianCoord, CoordUtils
 from .vehicle_placer import VehiclePlacer
@@ -225,12 +228,16 @@ class QgisSweptPath:
                 p_type = "wheel"
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "fwl"))
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "fwr"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "fwlb"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "fwrb"))
 
             if v.has_rear_axle:
                 p_type = "wheel"
                 # Setup rear axle points
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "rwl"))
                 self._path_points.append(PathPoints(v, v.vehicle_name, v_type, p_type, "rwr"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "rwlb"))
+                self._path_points.append(PathPoints(v, v.vehicle_name, v_type, "body", "rwrb"))
 
 
     def initGui(self):
@@ -382,6 +389,10 @@ class QgisSweptPath:
         self.simulation_running = False
         self.dockwidget.btnStartStopSimulation.setText("START")
         if self._print_path:
+            if self._print_iteration != 0:
+                self._print_iteration = self._print_interval
+                self._store_path_points()
+
             self._write_path_to_layer()
 
     def startSimulation(self):
@@ -416,6 +427,7 @@ class QgisSweptPath:
             )
 
     def simulate(self):
+        self._print_iteration = self._print_interval  # Set iteration to interval so the point will be printed on first step
         points = []
         while self.simulation_running:
             if self.vehicle.speed > 0.05:
@@ -433,9 +445,9 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory
-        trailer = MercedesCitaroGTrailer()
-        self.vehicle = MercedesCitaroG()
-        self.vehicle.trailer = trailer
+        trailer = Gelenkbus1875Trailer()
+        self.vehicle = MercedesCitaro()
+        #  self.vehicle.trailer = trailer
 
     def _place_vehicle(self):
         # Place the vehicle with the VehiclePlacer class

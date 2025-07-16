@@ -1,7 +1,7 @@
 <svg
-    width="75.95"
+    width="106.00"
     height="25.50"
-    viewBox="0 0 75.95 25.50"
+    viewBox="0 0 106.00 25.50"
     xmlns="http://www.w3.org/2000/svg">
 
     <style>
@@ -19,15 +19,57 @@
     <!-- vehicle body (origin top left)-->
     <rect
         class="body"
-        x="0.5"
+        x="8.80"
         y="0.5"
-        width="67.09"
+        width="96.70"
         height="24.5"
         rx="1"
     />
     </g>
 
-    <g transform="translate(34.30 12.75)">
+    <g transform="translate(78.30 6.1559)">
+    <!-- left front wheel (origin left pivot) -->
+    <rect
+        id="left_wheel"
+        class="wheel"
+        x="-4.785"
+        y="-5.4059"
+        width="9.57"
+        height="2.75"
+        rx="1"
+        transform="param(wheel_angle)"
+    />
+    <circle
+        id="left_pivot"
+        cx="0"
+        cy="0"
+        r="0.5"
+        fill="black"
+    />
+    </g>
+
+    <g transform="translate(78.30 19.344)">
+    <!-- right front wheel (origin right pivot)-->
+    <rect
+        id="right_wheel"
+        class="wheel"
+        x="-4.785"
+        y="2.6559"
+        width="9.57"
+        height="2.75"
+        rx="1"
+        transform="param(wheel_angle)"
+    />
+    <circle
+        id="right_pivot"
+        cx="0"
+        cy="0"
+        r="0.5"
+        fill="black"
+    />
+    </g>
+
+    <g transform="translate(19.0 12.75)">
     <!-- back wheels (origin rear axle center point -->
         <rect
             id="left_rear_wheel"
