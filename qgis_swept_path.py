@@ -46,9 +46,6 @@ from .vehicles.mercedes_citaro_g import MercedesCitaroG
 from .vehicles.mercedes_citaro_g_trailer import MercedesCitaroGTrailer
 from .vehicles.gelenkbus_18_75 import Gelenkbus1875
 from .vehicles.gelenkbus_18_75_trailer import Gelenkbus1875Trailer
-from .vehicles.doppelgelenkbus_24_66 import Doppelgelenkbus2466
-from .vehicles.doppelgelenkbus_24_66_middle import Doppelgelenkbus2466Middle
-from .vehicles.doppelgelenkbus_24_66_tail import Doppelgelenkbus2466Tail
 
 from .coord import CartesianCoord, CoordUtils
 from .vehicle_placer import VehiclePlacer
@@ -444,12 +441,9 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory
-        tail = Doppelgelenkbus2466Tail()
-        middle = Doppelgelenkbus2466Middle()
-        middle.trailer = tail
-
-        self.vehicle = Doppelgelenkbus2466()
-        self.vehicle.trailer = middle
+        trailer = Gelenkbus1875Trailer()
+        self.vehicle = MercedesCitaro()
+        #  self.vehicle.trailer = trailer
 
     def _place_vehicle(self):
         # Place the vehicle with the VehiclePlacer class
