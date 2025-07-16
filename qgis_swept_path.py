@@ -508,6 +508,7 @@ class QgisSweptPath:
             feature.setGeometry(QgsGeometry.fromPolylineXY(p.get_list_as_qgs_points()))
             self._path_layer.dataProvider().addFeatures([feature])
 
+        self._path_layer.reload()
         self._path_layer.triggerRepaint()
 
 
