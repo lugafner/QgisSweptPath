@@ -112,8 +112,7 @@ class QgisSweptPath:
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
             # Signals
-            self.dockwidget.btnStartSimulation.clicked.connect(self.startSimulation)
-            self.dockwidget.btnStopSimulation.clicked.connect(self.stopSimulation)
+            self.dockwidget.btnStartStopSimulation.clicked.connect(self.startStopSimulation)
             self.dockwidget.btnAddVehicleLayer.clicked.connect(self._create_vehicle_layer)
             self.dockwidget.btnAddPathLayer.clicked.connect(self._create_path_layer)
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
@@ -148,6 +147,11 @@ class QgisSweptPath:
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+K")
+        self.add_action("Start/Stop simulation",
+                        self.startStopSimulation,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+U")
 
     def setupLayers(self):
         """
@@ -341,13 +345,6 @@ class QgisSweptPath:
 
         return action
 
-    def update_status(self):
-        if self.simulation_running:
-            self.dockwidget.lblStatus.setText("Simulation running")
-        # Add else if for more specific status
-        else:
-            self.dockwidget.lblStatus.setText("Status")
-
     def update_speed(self):
         self.dockwidget.txtSpeed.setText("{:.2f} km/h".format(self.vehicle.speed * 3.6))
 
@@ -373,13 +370,19 @@ class QgisSweptPath:
         if self.simulation_running:
             self.vehicle.steer_right()
             self.update_steering()
+
+    def startStopSimulation(self):
+        # Starts or stops the simulation based on current status
+        if self.simulation_running:
+            self.stopSimulation()
+        else:
+            self.startSimulation()
     
     def stopSimulation(self):
         self.simulation_running = False
-        self.update_status()
+        self.dockwidget.btnStartStopSimulation.setText("START")
         if self._print_path:
             self._write_path_to_layer()
-
 
     def startSimulation(self):
         if (self.dockwidget.txtSimulationId.text() is None
@@ -404,7 +407,7 @@ class QgisSweptPath:
             self.simulation_running = True
             t = Thread(target=self.simulate, args=())
             t.start()
-            self.update_status()
+            self.dockwidget.btnStartStopSimulation.setText("STOP")
         else:
             self.iface.messageBar().pushMessage(
                 "Can't start simulation",
