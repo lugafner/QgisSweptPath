@@ -35,7 +35,7 @@ import time
 # Initialize Qt resources from file resources.py
 
 # Import the code for the DockWidget
-from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
+from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 import os.path
 
@@ -73,7 +73,7 @@ class QgisSweptPath:
 
         self.pluginIsActive = False
         self.dockwidget = None
-        self.properties = None
+        self.prop = None  # Advanced property widget class
 
         # Qgis property strings
         self._property_strings: dict[str, str] = {
@@ -108,8 +108,8 @@ class QgisSweptPath:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget is None:
                 # Create the dockwidget
-                self.dockwidget = QgisSweptPathDockWidget()
-                self.properties = QgisSweptPathDockWidgetProp()
+                self.dockwidget = QgisSweptPathDockWidgetBase()
+                self.prop = QgisSweptPathDockWidgetProp()
 
                 # Setup Controls
                 self.setupControls()
@@ -631,5 +631,5 @@ class QgisSweptPath:
 
 
     def _show_properties(self):
-        self.properties.show()
+        self.prop.show()
 
