@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>728</width>
+    <width>365</width>
     <height>477</height>
    </rect>
   </property>
@@ -52,47 +52,55 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>728</width>
+         <width>365</width>
          <height>451</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="1" column="2">
-         <widget class="QPushButton" name="btnVehicleLayerStyle">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Step distance</string>
           </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QLineEdit" name="propVehicleLayerStyle">
           <property name="minimumSize">
            <size>
             <width>40</width>
-            <height>0</height>
+            <height>24</height>
            </size>
           </property>
-          <property name="maximumSize">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QCheckBox" name="propPrintPath">
+          <property name="minimumSize">
            <size>
-            <width>40</width>
-            <height>16777215</height>
+            <width>0</width>
+            <height>24</height>
            </size>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
           </property>
           <property name="text">
-           <string>...</string>
+           <string/>
           </property>
-          <property name="flat">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item row="10" column="0" colspan="3">
+         <widget class="Line" name="line_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Frames</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
            <string>Print path</string>
@@ -105,20 +113,83 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="propPrintPath">
-          <property name="layoutDirection">
-           <enum>Qt::LeftToRight</enum>
-          </property>
-          <property name="text">
-           <string/>
+        <item row="4" column="0" colspan="3">
+         <widget class="Line" name="line_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="btnPathLayerStyle">
+        <item row="6" column="1">
+         <widget class="QLineEdit" name="propPathLayerStyle">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" colspan="2">
+         <widget class="QLineEdit" name="propPathLayer">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Vehicle layer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="3">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Frames</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="2">
+         <widget class="QLineEdit" name="propVehicleLayer">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1" colspan="2">
+         <widget class="QSpinBox" name="propFrames">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -126,38 +197,9 @@
           <property name="minimumSize">
            <size>
             <width>40</width>
-            <height>0</height>
+            <height>24</height>
            </size>
           </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>111111</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="propVehicleLayerStyle"/>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Default path layer style</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLineEdit" name="propPathLayerStyle"/>
-        </item>
-        <item row="3" column="1">
-         <widget class="QSpinBox" name="propFrames">
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
@@ -178,7 +220,73 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="6" column="2">
+         <widget class="QPushButton" name="btnPathLayerStyle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Default path layer style</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1" colspan="2">
+         <widget class="QDoubleSpinBox" name="propStepDistance">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="suffix">
+           <string> m</string>
+          </property>
+          <property name="minimum">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.050000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
          <widget class="QLabel" name="label_2">
           <property name="text">
            <string>Default vehicle layer style</string>
@@ -188,18 +296,97 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0" colspan="3">
-         <spacer name="verticalSpacer">
+        <item row="7" column="0" colspan="3">
+         <widget class="Line" name="line_3">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0">
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Path layer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Dissolve path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="3">
+         <widget class="Line" name="line">
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <property name="lineWidth">
+           <number>1</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2">
+         <widget class="QPushButton" name="btnVehicleLayerStyle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
            <size>
-            <width>20</width>
-            <height>0</height>
+            <width>40</width>
+            <height>24</height>
            </size>
           </property>
-         </spacer>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Dissolve by fields</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1" colspan="2">
+         <widget class="QLineEdit" name="propDissolveFields">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QCheckBox" name="propDissolvePath">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
