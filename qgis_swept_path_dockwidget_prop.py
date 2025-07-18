@@ -220,22 +220,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         return self._vehicle_layer_id
 
 
-    @vehicle_layer_id.setter
-    def vehicle_layer_id(self, v: str):
-        """Layer id of vehicle layer"""
-        self._vehicle_layer_id = v
-
-
     @property
     def path_layer_id(self) -> str:
         """Layer id of path layer"""
         return self._path_layer_id
-
-
-    @path_layer_id.setter
-    def path_layer_id(self, v: str):
-        """Layer id of path layer"""
-        self._path_layer_id = v
 
 
     @property
@@ -269,3 +257,18 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def print_distance(self):
         """Distance between storing path points for frame based simulation"""
         return self._print_distance
+
+
+    # Setters
+    # The write properties must be called after each value change from outside the GUI
+    def set_path_layer_id(self, v: str):
+        """Set the layer id of path layer"""
+        self._path_layer_id = v
+        self._write_properties()
+
+
+    def set_vehicle_layer_id(self, v: str):
+        """Set the layer id of vehicle layer"""
+        self._vehicle_layer_id = v
+        self._write_properties()
+
