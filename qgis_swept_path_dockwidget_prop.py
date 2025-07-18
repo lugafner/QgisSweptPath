@@ -17,15 +17,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.setupUi(self)
 
         # Properties with default values
-        self._frames: int = 24  # Frames per seconds for simulation. TODO: Implementation for frame based simulation
+        self._frames: int = 24  # Frames per second for simulation. TODO: Implementation for frame based simulation
         self._step_distance: float = 0.05  # Distance for step based simulation
         self._print_path: bool = True  # Do or do not print path
-        self._vehicle_layer_style: str = ""  # Path to qgis layer style for vehicle layer
-        self._path_layer_style: str = ""  # Path to qgis layer style for path layer
+        self._vehicle_layer_style: str = "./style/vehicle.qml"  # Path to qgis layer style for vehicle layer. Absolute or relative to the plugin dir.
+        self._path_layer_style: str = "./style/path.qml"  # Path to qgis layer style for path layer. Absolute or relative to the plugin dir.
         self._vehicle_layer: str = ""  # Layer id of vehicle layer
         self._path_layer: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
-        self._dissolve_fields: str = ""  # List of fields to dissolve the paths by
+        self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
@@ -63,9 +63,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propPrintPath.stateChanged.connect(self._change_print_path)
         self.btnVehicleLayerStyle.clicked.connect(self._change_vehicle_layer_style)
         self.btnPathLayerStyle.clicked.connect(self._change_path_layer_style)
+        self.propFrames.valueChanged.connect(self._change_frames)
+        self.propStepDistance.valueChanged.connect(self._change_step_distance)
         self.propDissolvePath.stateChanged.connect(self._change_dissolve_path)
         self.propDissolveFields.textEdited.connect(self._change_dissolve_fields)
-
 
 
     def _updateGUI(self):
@@ -102,7 +103,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             settings.setValue(v, getattr(self, k))
 
 
-    def _show_file_select_dialog(self, title: str = "Open file", file_types: list[str] = ["Any files (*)"]):
+    def _show_file_select_dialog(self,
+                                 title: str = "Open file",
+                                 file_types: list[str] = ["Any files (*)"]) -> str | None:
+        """
+        Shows an open file dialog for a single file
+        @param title: String for title of the dialog
+        @param file_types: String list of file type filter
+        @return: Absolute file path as string or None if no file is selected
+        """
         dialog = QFileDialog(self)
         dialog.setWindowTitle(title)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
@@ -143,6 +152,13 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         else:
             pass
 
+    def _change_frames(self):
+        self._frames = int(self.propFrames.value())
+
+
+    def _change_step_distance(self):
+        self._step_distance = float(self.propStepDistance.value())
+
 
     def _change_dissolve_path(self):
         self._dissolve_path = self.propDissolvePath.isChecked()
@@ -155,5 +171,74 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
     @property
     def frames(self) -> int:
-        """Simulation frames per seconds"""
+        """Frames per seconds for simulation"""
         return self._frames
+
+
+    @property
+    def step_distance(self) -> float:
+        """Distance for step based simulation"""
+        return self._step_distance
+
+
+    @property
+    def vehicle_layer_style(self) -> str:
+        """
+        Path to qgis layer style for vehicle layer.
+        Absolute or relative to the plugin directory
+        """
+        return self._vehicle_layer_style
+
+
+    @property
+    def path_layer_style(self) -> str:
+        """
+        Path to qgis layer style for path layer.
+        Absolute or relative to the plugin directory
+        """
+        return self._path_layer_style
+
+
+    @property
+    def vehicle_layer(self) -> str:
+        """Layer id of vehicle layer"""
+        return self._vehicle_layer
+
+
+    @vehicle_layer.setter
+    def vehicle_layer(self, v: str):
+        """Layer id of vehicle layer"""
+        self._vehicle_layer = v
+
+
+    @property
+    def path_layer(self) -> str:
+        """Layer id of path layer"""
+        return self._path_layer
+
+
+    @path_layer.setter
+    def path_layer(self, v: str):
+        """Layer id of path layer"""
+        self._path_layer = v
+
+
+    @property
+    def print_path(self) -> bool:
+        """Do or do not print path"""
+        return self._print_path
+
+
+    @property
+    def dissolve_path(self) -> bool:
+        """Do or do not dissolve the paths"""
+        return self._dissolve_path
+
+
+    @property
+    def dissolve_fields(self) -> str:
+        """
+        String of fields to dissolve the paths by
+        Comma separated
+        """
+        return self._dissolve_fields
