@@ -35,7 +35,8 @@ import time
 # Initialize Qt resources from file resources.py
 
 # Import the code for the DockWidget
-from .qgis_swept_path_dockwidget import QgisSweptPathDockWidget
+from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
+from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 import os.path
 
 # Import SweptPath code
@@ -66,29 +67,21 @@ class QgisSweptPath:
         # Declare instance attributes
         self.actions = []
         self.menu = "QgisSweptPath"
-        # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar('QgisSweptPath')
         self.toolbar.setObjectName('QgisSweptPath')
 
         self.pluginIsActive = False
-        self.dockwidget = None
-
-        # Qgis property strings
-        self._property_strings: dict[str, str] = {
-            "vehicle_layer_id": "qgissweptpath/vehicle_layer",
-            "path_layer_id": "qgissweptpath/path_layer"
-        }
+        self.dockwidget: QgisSweptPathDockWidgetBase = None
+        self.prop: QgisSweptPathDockWidgetProp = None  # Advanced property widget class
 
         # SweptPath fields
         self.simulation_running: bool = False  # Simulation is running
         self._simulation_id: str = ""  # Simulation ID for layer features identification
         self.vehicle: Vehicle = None  # The vehicle to simulate
-        self._print_path: bool = True  # Property, if the path should be printed. If no path layer is present this will be set to false
         self._path_points: list[PathPoints] = []  # Stores all the path points during simulation
 
         # Controls the printing iteration
         self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
-        self._print_interval: int = 10  # Interval. Each nth step the vehicle point will be stored/printed
 
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
@@ -106,7 +99,8 @@ class QgisSweptPath:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget is None:
                 # Create the dockwidget
-                self.dockwidget = QgisSweptPathDockWidget()
+                self.dockwidget = QgisSweptPathDockWidgetBase()
+                self.prop = QgisSweptPathDockWidgetProp()
 
                 # Setup Controls
                 self.setupControls()
@@ -120,6 +114,7 @@ class QgisSweptPath:
             self.dockwidget.btnAddPathLayer.clicked.connect(self._create_path_layer)
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
+            self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
 
             self.setupLayers()
 
@@ -164,18 +159,14 @@ class QgisSweptPath:
         If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
         (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
         """
-        # Get the layer ids from the Qgis settings
-        settings = QgsSettings()
-        vehicle_layer_id = settings.value(self._property_strings["vehicle_layer_id"], None)
-        path_layer_id = settings.value(self._property_strings["path_layer_id"], None)
 
         # Vehicle layer
-        if vehicle_layer_id is None:
+        if self.prop.vehicle_layer_id is "":
             # Create new layer if there is no id stored in the project
             self._create_vehicle_layer()
         else:
             # Get the layer by the id
-            vehicle_layer = QgsProject.instance().mapLayer(vehicle_layer_id)
+            vehicle_layer = QgsProject.instance().mapLayer(self.prop.vehicle_layer_id)
             if vehicle_layer is None:
                 # If the layer is not available create new layer
                 self.iface.messageBar().pushMessage(
@@ -187,17 +178,16 @@ class QgisSweptPath:
             else:
                 # Save reference to the existing layer and show the id in the text field
                 self._vehicle_layer = vehicle_layer
-                self.dockwidget.txtVehicleLayer.setText(vehicle_layer_id)
 
         # Path layer (details see vehicle layer above)
-        if path_layer_id is None:
+        if self.prop.path_layer_id is "":
             self.iface.messageBar().pushMessage(
                 "Path layer not available",
                 "No Path layer is available. Create a new path layer manually",
                 level=Qgis.Info
             )
         else:
-            path_layer = QgsProject.instance().mapLayer(path_layer_id)
+            path_layer = QgsProject.instance().mapLayer(self.prop.path_layer_id)
             if path_layer is None:
                 self.iface.messageBar().pushMessage(
                     "Path layer not available",
@@ -206,7 +196,6 @@ class QgisSweptPath:
                 )
             else:
                 self._path_layer = path_layer
-                self.dockwidget.txtPathLayer.setText(path_layer_id)
 
 
     def setup_path_points(self):
@@ -388,9 +377,9 @@ class QgisSweptPath:
     def stopSimulation(self):
         self.simulation_running = False
         self.dockwidget.btnStartStopSimulation.setText("START")
-        if self._print_path:
+        if self.prop.print_path:
             if self._print_iteration != 0:
-                self._print_iteration = self._print_interval
+                self._print_iteration = self.prop.print_interval
                 self._store_path_points()
 
             self._write_path_to_layer()
@@ -407,7 +396,7 @@ class QgisSweptPath:
         # The vehicle must first be created manually and be placed
         if self.vehicle is not None and self.vehicle.is_placed:
             # Checks if print path is set to true
-            if self._print_path is True:
+            if self.prop.print_path:
                 self.setup_path_points()
 
             # Update the text fields with the steering and speed
@@ -427,18 +416,16 @@ class QgisSweptPath:
             )
 
     def simulate(self):
-        self._print_iteration = self._print_interval  # Set iteration to interval so the point will be printed on first step
-        points = []
+        self._print_iteration = self.prop.print_interval  # Set iteration to interval so the point will be printed on first step
         while self.simulation_running:
             if self.vehicle.speed > 0.05:
                 self.vehicle.step()
-                point = QgsPoint(self.vehicle.f.x, self.vehicle.f.y)
-                points.append(point)
+
                 if not self.canvas.isDrawing():
                     self._draw_vehicle()
                 time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
 
-                if self._print_path:
+                if self.prop.print_path:
                     self._store_path_points()
             else:
                 pass
@@ -500,7 +487,7 @@ class QgisSweptPath:
 
     def _store_path_points(self):
         # Store the vehicle points in a list
-        if self._print_iteration == self._print_interval:
+        if self._print_iteration == self.prop.print_interval:
             for p in self._path_points:
                 p.add_point(getattr(p.vehicle, p.vehicle_part))
             self._print_iteration = 0
@@ -555,10 +542,8 @@ class QgisSweptPath:
         QgsProject.instance().addMapLayer(self._vehicle_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
-        settings = QgsSettings()
-        vehicle_layer_id = self._vehicle_layer.id()
-        settings.setValue(self._property_strings["vehicle_layer_id"], vehicle_layer_id)
-        self.dockwidget.txtVehicleLayer.setText(vehicle_layer_id)
+        self.prop.set_vehicle_layer_id(self._vehicle_layer.id())
+
 
     def _create_path_layer(self):
         """
@@ -588,10 +573,7 @@ class QgisSweptPath:
         QgsProject.instance().addMapLayer(self._path_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
-        settings = QgsSettings()
-        path_layer_id = self._path_layer.id()
-        settings.setValue(self._property_strings["path_layer_id"], path_layer_id)
-        self.dockwidget.txtPathLayer.setText(path_layer_id)
+        self.prop.set_path_layer_id(self._path_layer.id())
 
         # Show dialog to save the path layer to file/database
         save_dialog = QgsVectorLayerSaveAsDialog(self._path_layer, QgsVectorLayerSaveAsDialog.Option.Symbology)
@@ -626,3 +608,8 @@ class QgisSweptPath:
                 "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
                 "when the project is closed. The created layer must be saved manually",
             )
+
+
+    def _show_properties(self):
+        self.prop.show()
+
