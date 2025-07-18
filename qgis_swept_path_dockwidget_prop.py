@@ -17,9 +17,11 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.setupUi(self)
 
         # Properties with default values
-        self._frames: int = 24  # Frames per second for simulation. TODO: Implementation for frame based simulation
+        self._frames: int = 24  # Frames per second for frame based simulation. TODO: Implement frame based simulation
         self._step_distance: float = 0.05  # Distance for step based simulation
         self._print_path: bool = True  # Do or do not print path
+        self._print_interval: int = 2  # Interval storing path points for step based simulation TODO: Implement frame based simulation
+        self._print_distance: float = 1.00  # Distance between storing path points for frame based simulation.
         self._vehicle_layer_style: str = "./style/vehicle.qml"  # Path to qgis layer style for vehicle layer. Absolute or relative to the plugin dir.
         self._path_layer_style: str = "./style/path.qml"  # Path to qgis layer style for path layer. Absolute or relative to the plugin dir.
         self._vehicle_layer_id: str = ""  # Layer id of vehicle layer
@@ -32,6 +34,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_frames": "qgissweptpath/frames",
             "_step_distance": "qgissweptpath/step_distance",
             "_print_path": "qgissweptpath/print_path",
+            "_print_interval": "qgissweptpath/print_interval",
+            "_print_distance": "qgissweptpath/print_distance",
             "_vehicle_layer_style": "qgissweptpath/vehicle_layer_style",
             "_path_layer_style": "qgissweptpath/path_layer_style",
             "_vehicle_layer_id": "qgissweptpath/vehicle_layer_id",
@@ -67,6 +71,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propStepDistance.valueChanged.connect(self._change_step_distance)
         self.propDissolvePath.stateChanged.connect(self._change_dissolve_path)
         self.propDissolveFields.textEdited.connect(self._change_dissolve_fields)
+        self.propPrintInterval.valueChanged.connect(self._change_print_interval)
+        self.propPrintDistance.valueChanged.connect(self._change_print_distance)
 
 
     def _updateGUI(self):
@@ -82,6 +88,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propStepDistance.setValue(self._step_distance)
         self.propDissolvePath.setChecked(self._dissolve_path)
         self.propDissolveFields.setText(self._dissolve_fields)
+        self.propPrintInterval.setValue(self._print_interval)
+        self.propPrintDistance.setValue(self._print_distance)
 
 
     def _readProperties(self):
@@ -124,7 +132,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
 
     def _change_print_path(self):
-        self._print_path = self.propPrintPath.isChecked()
+        self._print_path = bool(self.propPrintPath.isChecked())
 
 
     def _change_vehicle_layer_style(self):
@@ -161,12 +169,19 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
 
     def _change_dissolve_path(self):
-        self._dissolve_path = self.propDissolvePath.isChecked()
+        self._dissolve_path = bool(self.propDissolvePath.isChecked())
 
 
     def _change_dissolve_fields(self):
-        print(self.propDissolveFields.text)
-        self._dissolve_fields = self.propDissolveFields.text()
+        self._dissolve_fields = str(self.propDissolveFields.text())
+
+
+    def _change_print_interval(self):
+        self._print_interval = int(self.propPrintInterval.value())
+
+
+    def _change_print_distance(self):
+        self._print_distance = float(self.propPrintDistance.value())
 
 
     @property
@@ -242,3 +257,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         Comma separated
         """
         return self._dissolve_fields
+
+
+    @property
+    def print_interval(self) -> int:
+        """Interval storing path points for step based simulation"""
+        return self._print_interval
+
+
+    @property
+    def print_distance(self):
+        """Distance between storing path points for frame based simulation"""
+        return self._print_distance
