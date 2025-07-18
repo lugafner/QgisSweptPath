@@ -22,8 +22,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._print_path: bool = True  # Do or do not print path
         self._vehicle_layer_style: str = "./style/vehicle.qml"  # Path to qgis layer style for vehicle layer. Absolute or relative to the plugin dir.
         self._path_layer_style: str = "./style/path.qml"  # Path to qgis layer style for path layer. Absolute or relative to the plugin dir.
-        self._vehicle_layer: str = ""  # Layer id of vehicle layer
-        self._path_layer: str = ""  # Layer id of path layer
+        self._vehicle_layer_id: str = ""  # Layer id of vehicle layer
+        self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
 
@@ -34,8 +34,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_print_path": "qgissweptpath/print_path",
             "_vehicle_layer_style": "qgissweptpath/vehicle_layer_style",
             "_path_layer_style": "qgissweptpath/path_layer_style",
-            "_vehicle_layer": "qgissweptpath/vehicle_layer",
-            "_path_layer": "qgissweptpath/path_layer",
+            "_vehicle_layer_id": "qgissweptpath/vehicle_layer_id",
+            "_path_layer_id": "qgissweptpath/path_layer_id",
             "_dissolve_path": "qgissweptpath/dissolve_path",
             "_dissolve_fields": "qgissweptpath/dissolve_fields"
         }
@@ -73,8 +73,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         """
         Fills the property values in the gui objects
         """
-        self.propVehicleLayer.setText(self._vehicle_layer)
-        self.propPathLayer.setText(self._path_layer)
+        self.propVehicleLayerId.setText(self._vehicle_layer_id)
+        self.propPathLayerId.setText(self._path_layer_id)
         self.propPrintPath.setChecked(self._print_path)
         self.propVehicleLayerStyle.setText(self._vehicle_layer_style)
         self.propPathLayerStyle.setText(self._path_layer_style)
@@ -200,27 +200,27 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
 
     @property
-    def vehicle_layer(self) -> str:
+    def vehicle_layer_id(self) -> str:
         """Layer id of vehicle layer"""
-        return self._vehicle_layer
+        return self._vehicle_layer_id
 
 
-    @vehicle_layer.setter
-    def vehicle_layer(self, v: str):
+    @vehicle_layer_id.setter
+    def vehicle_layer_id(self, v: str):
         """Layer id of vehicle layer"""
-        self._vehicle_layer = v
+        self._vehicle_layer_id = v
 
 
     @property
-    def path_layer(self) -> str:
+    def path_layer_id(self) -> str:
         """Layer id of path layer"""
-        return self._path_layer
+        return self._path_layer_id
 
 
-    @path_layer.setter
-    def path_layer(self, v: str):
+    @path_layer_id.setter
+    def path_layer_id(self, v: str):
         """Layer id of path layer"""
-        self._path_layer = v
+        self._path_layer_id = v
 
 
     @property
