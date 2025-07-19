@@ -9,11 +9,7 @@ from qgis.core import Qgis
 
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .vehicle import Vehicle
-
-
-class SimulationMode(Enum):
-    STEP_BASED = 0
-    FRAME_BASED = 1
+from .qgis_swept_path_enum import SimulationMode
 
 
 class Simulator(QObject):
@@ -23,7 +19,7 @@ class Simulator(QObject):
 
     def __init__(self):
         """Constructor"""
-        super().__init__(self)
+        super(Simulator, self).__init__()
 
         self._vehicle: Vehicle = None
         self._prop: QgisSweptPathDockWidgetProp = None
@@ -32,9 +28,9 @@ class Simulator(QObject):
         self._simulation_timer: QTimer = QTimer(self)
 
         # Number of frames to steer from center to full steering angle
-        self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
+        self._frames_half_steering: float = None
         # Time between steps in milliseconds
-        self._time_between_steps = int(1000 / self._prop.frames)
+        self._time_between_steps: int = None
 
         # Flags for steering and speed change
         self._steer_right: bool = False
@@ -143,6 +139,12 @@ class Simulator(QObject):
             # self.storePath.emit()
 
             time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
+
+
+    @property
+    def simulation_running(self) -> bool:
+        """Simulation is running or not"""
+        return self._simulation_running
 
 
     def set_properties(self, prop: QgisSweptPathDockWidgetProp):

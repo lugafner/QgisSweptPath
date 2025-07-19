@@ -1,11 +1,12 @@
 
 import os
-from typing import override, Any
+from typing import override
 
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.core import QgsSettings
-from simulator import SimulationMode
+
+from .qgis_swept_path_enum import SimulationMode
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
