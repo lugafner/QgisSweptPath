@@ -105,7 +105,7 @@ class QgisSweptPath:
                 # Create the dockwidget
                 self.dockwidget = QgisSweptPathDockWidgetBase()
                 self.prop = QgisSweptPathDockWidgetProp()
-                self.simulator = Simulator()
+                self.simulator = Simulator(self.iface)
 
                 # Setup Controls
                 self.setupControls()
@@ -370,6 +370,7 @@ class QgisSweptPath:
     def stopSimulation(self):
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
+        self.canvas.unsetMapTool(self.simulator)
         self._write_path_to_layer()
 
 
@@ -393,8 +394,9 @@ class QgisSweptPath:
             self.update_speed()
 
             # Init simulator and start
-            self.simulator.set_vehicle(self.vehicle)
-            self.simulator.set_properties(self.prop)
+            self.simulator.vehicle = self.vehicle
+            self.simulator.properties = self.prop
+            self.canvas.setMapTool(self.simulator)
             self.simulator.startSimulation()
 
             self.dockwidget.btnStartStopSimulation.setText("STOP")
@@ -404,21 +406,6 @@ class QgisSweptPath:
                 "The vehicle must first be created and placed",
                 level=Qgis.Critical
             )
-
-    def simulate(self):
-        self._print_iteration = self.prop.print_interval  # Set iteration to interval so the point will be printed on first step
-        while self.simulation_running:
-            if self.vehicle.speed > 0.05:
-                self.vehicle.step()
-
-                if not self.canvas.isDrawing():
-                    self._draw_vehicle()
-                time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
-
-                if self.prop.print_path:
-                    self._store_path_points()
-            else:
-                pass
 
 
     def _setup_vehicle(self):
@@ -461,6 +448,8 @@ class QgisSweptPath:
                 self._vehicle_layer.dataProvider().addFeatures([f])
 
             self._vehicle_layer.triggerRepaint()
+            self.update_speed()
+            self.update_steering()
 
 
     def _create_vehicle_drawing(self):
