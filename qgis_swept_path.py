@@ -371,6 +371,7 @@ class QgisSweptPath:
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
         self.canvas.unsetMapTool(self.simulator)
+        self.iface.actionPan().trigger()
         self._write_path_to_layer()
 
 

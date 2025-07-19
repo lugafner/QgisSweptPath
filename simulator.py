@@ -69,6 +69,8 @@ class Simulator(QgsMapTool):
 
     def startSimulation(self):
         self._simulation_running = True
+        self.setCursor(Qt.BlankCursor)
+
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
             self._simulation_timer.timeout.connect(self._simulate_frame)
             self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
