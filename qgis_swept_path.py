@@ -91,6 +91,7 @@ class QgisSweptPath:
         self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
 
+
     def run(self):
         """Run method that loads and starts the plugin"""
 
@@ -360,7 +361,7 @@ class QgisSweptPath:
 
     def startStopSimulation(self):
         # Starts or stops the simulation based on current status
-        if self.simulation_running:
+        if self.simulator.simulation_running:
             self.stopSimulation()
         else:
             self.startSimulation()
