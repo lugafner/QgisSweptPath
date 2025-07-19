@@ -53,6 +53,7 @@ class Vehicle:
 
         # Technical fields
         self._vehicle_is_placed: bool = False
+        self._maximum_speed: float = 8.33
         self._vehicle_parts: list[Vehicle] = []  # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
 
         # Update the vehicle parts list
