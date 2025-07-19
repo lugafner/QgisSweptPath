@@ -47,19 +47,12 @@ class Vehicle:
         # **************************************************************************************************************
         # No setup for new vehicle necessary
         # Driving
-        self._speed: float = 1.0
+        self._speed: float = 0.0
         self._steering_angle: float = 0.0
         self._trailer_angle: float = 0.0
 
         # Technical fields
         self._vehicle_is_placed: bool = False
-        self._do_drawing: bool = True
-        self._speed_up_steps: float = 0.1  # Increase speed in m/s with each input
-        self._speed_down_steps: float = 0.1  # Decrease speed in m/s with each input
-        self._steer_in_steps: float = 1.0 / 180 * math.pi  # Turn in wheels with each input in rad
-        self._steer_back_steps: float = 1.0 / 180 * math.pi  # Turn back wheels with each input in rad
-        self._simulation_step: float = 0.05  # Distance to drive with each simulation step in m
-        self._iteration_break: float = self._simulation_step / self._speed  # Break time between simulation steps (init with none for trailers)
         self._vehicle_parts: list[Vehicle] = []  # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
 
         # Update the vehicle parts list
@@ -196,15 +189,16 @@ class Vehicle:
         """
         return float(self._wheelbase / math.tan(self._steering_angle))
 
-    def _get_center_angle(self) -> float:
+    def _get_center_angle(self, distance: float) -> float:
         """
         Calculate the center angle of one step.
         Calculation based on step distance of the front wheel point f along the driving arch
+        @param distance: driving distance
         """
-        return float(self._simulation_step / self._get_front_wheel_radius())
+        return float(distance) / self._get_front_wheel_radius()
 
-    def _get_driving_vector_front(self) -> PolarCoord:
-        center_angle = self._get_center_angle()
+    def _get_driving_vector_front(self, distance: float) -> PolarCoord:
+        center_angle = self._get_center_angle(distance)
         outer_angle = (math.pi - center_angle) / 2
         driving_vector_angle = math.pi / 2 - outer_angle + self.steering_angle
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
@@ -219,14 +213,14 @@ class Vehicle:
         driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
-    def _drive(self):
+    def _drive(self, distance: float):
         """
         Drive the vehicle one step
         """
         if abs(self._steering_angle) > 0.0:
-            front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front()
+            front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front(distance)
         else:
-            front_wheel_driving_vector = PolarCoord(self._simulation_step, 0.0)
+            front_wheel_driving_vector = PolarCoord(distance, 0.0)
 
         # Calculate the global point f
         # Recalculate a and the other global points h and cp
@@ -240,60 +234,74 @@ class Vehicle:
             self._trailer.step_trailer(self._global_cp, self._trailer_angle)
 
 
-    def step(self):
+    def step(self, distance: float):
         """
         Calculates the next point based on current location and steering angle
+        @param distance: Distance to drive with one step
         """
         assert self._vehicle_is_placed, "Vehicle must be placed firs"
         if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
-        self._drive()
+        self._drive(distance)
 
 
-    def step_trailer(self, connection_point: CartesianCoord, vehicle_angle: float):
+    def step_trailer(self, connection_point: CartesianCoord, vehicle_angle: float, distance: float):
         """
         Simulate the movement of a trailer based on connection point
         The connection point from the parent vehicle ist the reference point f of the trailer
 
         @param connection_point: Global cartesian coordinate of the connection point. Acts as point f of trailer
         @param vehicle_angle: Angle between parent vehicle and trailer. Acts as steering angle of trailer
+        @param distance: Distance to drive with one step
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
         self._global_f = connection_point
         self._steering_angle = vehicle_angle
 
         if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
-        self._drive()
+        self._drive(distance)
 
 
-    def speed_up(self):
-        """Increase vehicle speed"""
-        self._speed += self._speed_up_steps
+    def speed_up(self, step: float):
+        """
+        Increase vehicle speed
+        @param step: step to change the speed
+        """
+        self._speed += step
         # Speed limit of 25 km/h.
         # The maximum possible speed is dependent on the performance of QGIS. However, 25 km/h should not be exceeded.
-        if self._speed >= 6.94:
-            self.speed_down()
+        if self._speed >= self._maximum_speed:
+            self.speed_down(step)
 
 
-    def speed_down(self):
-        """Decrease vehicle speed"""
-        self._speed -= self._speed_down_steps
+    def speed_down(self, step: float):
+        """
+        Decrease vehicle speed
+        @param step: step to change the speed
+        """
+        self._speed -= step
         # Reversing speed limit of -25 km/h.
         # The maximum possible speed is dependent on the performance of QGIS. However, 25 km/h should not be exceeded.
         # Currently, reversing is not possible
-        if self._speed <= -6.94:
-            self.speed_up()
+        if self._speed <= -self._maximum_speed:
+            self.speed_up(step)
 
 
-    def steer_left(self):
-        """Increase wheel angle, if the max steering angle is not exceeded"""
-        new_angle = self._steering_angle + (self._steer_in_steps if self._steering_angle >= 0 else self._steer_back_steps)
+    def steer_left(self, step: float):
+        """
+        Increase wheel angle, if the max steering angle is not exceeded
+        @param step: Step to change wheel angle
+        """
+        new_angle = self._steering_angle + (step if self._steering_angle >= 0 else step)
         if self._max_steering_angle >= new_angle:
             self._steering_angle = new_angle
 
 
-    def steer_right(self):
-        """Increase wheel angle, if the max steering angle is not exceeded"""
-        new_angle = self._steering_angle - (self._steer_in_steps if self._steering_angle <= 0 else self._steer_back_steps)
+    def steer_right(self, step: float):
+        """
+        Increase wheel angle, if the max steering angle is not exceeded
+        @param step: Step to change wheel angle
+        """
+        new_angle = self._steering_angle - (step if self._steering_angle <= 0 else step)
         if self._max_steering_angle * -1 <= new_angle:
             self._steering_angle = new_angle
 
@@ -302,18 +310,6 @@ class Vehicle:
         """Returns the absolute file path of the symbol"""
         return str(Path(inspect.getfile(self.__class__)).parent / Path(self._symbol))
 
-    # Properties
-    @property
-    def do_drawing(self) -> bool:
-        """
-        Specify if the vehicle body should be drawn
-        For normal vehicle parts set to True (default). False only used i.e. for drawbar
-        """
-        return self._do_drawing
-    
-    @do_drawing.setter
-    def do_drawing(self, v: bool):
-        self._do_drawing = v
 
     @property
     def trailer(self):  # -> typing.Self Annotation removed for backward compatibility with Python 3.9
@@ -357,16 +353,6 @@ class Vehicle:
     def steering_angle(self, v):
         """Sets the steering angle"""
         self._steering_angle = v
-
-    @property
-    def simulation_step(self) -> float:
-        """Driving distance with each simulation step in meters"""
-        return self._simulation_step
-
-    @simulation_step.setter
-    def simulation_step(self, v:float):
-        """Set distance to drive with each simulation step in meters"""
-        self._simulation_step = v
 
     @property
     def f(self) -> CartesianCoord:

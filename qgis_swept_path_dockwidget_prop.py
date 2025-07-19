@@ -5,6 +5,7 @@ from typing import override, Any
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.core import QgsSettings
+from simulator import SimulationMode
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -28,6 +29,12 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
+
+        # TODO implement following fields
+        self._speed_change_step: float = 0.1  # Steps to change speed in m/s
+        self._steering_speed: float = 6.0  # Time in seconds for full left to full right
+        self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops
+        self._simulation_mode: SimulationMode = SimulationMode.FRAME_BASED
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
@@ -259,6 +266,30 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         return self._print_distance
 
 
+    @property
+    def steering_speed(self) -> float:
+        """Steering speed in seconds from full left to full right"""
+        return self._steering_speed
+
+
+    @property
+    def speed_change_step(self) -> float:
+        """Step to change speed"""
+        return self._speed_change_step
+
+
+    @property
+    def minimum_speed(self) -> float:
+        """Minimum speed before vehicle stops in m/s"""
+        return self._minimum_speed
+
+
+    @property
+    def simulation_mode(self) -> SimulationMode:
+        """Simulation mode"""
+        return self._simulation_mode
+
+
     # Setters
     # The write properties must be called after each value change from outside the GUI
     def set_path_layer_id(self, v: str):
@@ -271,4 +302,3 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         """Set the layer id of vehicle layer"""
         self._vehicle_layer_id = v
         self._write_properties()
-
