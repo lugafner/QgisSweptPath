@@ -74,12 +74,13 @@ class Simulator(QgsMapTool):
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
             self._simulation_timer.timeout.connect(self._simulate_frame)
             self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
-            self._time_between_steps = int(1000.0 / self._prop.frames)
-
+            self._time_between_steps = int(1000 / self._prop.frames)
             self._simulation_timer.start(self._time_between_steps)
+
         elif self._prop.simulation_mode == SimulationMode.STEP_BASED:
             t = Thread(target=self._simulate_step, args=())
             t.start()
+            
         else:
             self.iface.messageBar().pushMessage(
                 "Can't start simulation",
@@ -98,23 +99,27 @@ class Simulator(QgsMapTool):
 
 
     def speedUp(self):
+        if not self._speed_down:
+            self._speed_up = True
         self._speed_down = False
-        self._speed_up = True
 
 
     def speedDown(self):
+        if not self._speed_up:
+            self._speed_down = True
         self._speed_up = False
-        self._speed_down = True
 
 
     def steerRight(self):
+        if not self._steer_left:
+            self._steer_right = True
         self._steer_left = False
-        self._steer_right = True
 
 
     def steerLeft(self):
+        if not self._steer_right:
+            self._steer_left = True
         self._steer_right = False
-        self._steer_left = True
 
 
     def _simulate_frame(self):

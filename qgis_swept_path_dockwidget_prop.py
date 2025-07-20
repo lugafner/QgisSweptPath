@@ -32,7 +32,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
 
         # TODO implement following fields
-        self._speed_change_step: float = 0.1  # Steps to change speed in m/s
+        self._speed_change_step: float = 0.01  # Steps to change speed in m/s
         self._steering_speed: float = 6.0  # Time in seconds for full left to full right
         self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops
         self._simulation_mode: SimulationMode = SimulationMode.FRAME_BASED
