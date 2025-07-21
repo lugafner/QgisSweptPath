@@ -1,5 +1,5 @@
-from enum import Enum
+from enum import IntEnum
 
-class SimulationMode(Enum):
+class SimulationMode(IntEnum):
     STEP_BASED = 0
     FRAME_BASED = 1
