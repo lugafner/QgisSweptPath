@@ -6,6 +6,7 @@ from threading import Thread
 from typing import override
 
 from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
+from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
 from qgis.gui import QgsMapTool
 
@@ -28,6 +29,7 @@ class Simulator(QgsMapTool):
 
         self._simulation_running: bool = False
         self._simulation_timer: QTimer = QTimer(self)
+        self._simulation_timer.timeout.connect(self._simulate_frame)
 
         # Number of frames to steer from center to full steering angle
         self._frames_half_steering: float = None
@@ -42,37 +44,30 @@ class Simulator(QgsMapTool):
 
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_J:
+        if event.key() == QKeySequence(self._prop.key_steer_left):
             self._steer_left = True
-            print("J")
-        if event.key() == Qt.Key_L:
+        if event.key() == QKeySequence(self._prop.key_steer_right):
             self._steer_right = True
-            print("J")
-        if event.key() == Qt.Key_I:
+        if event.key() == QKeySequence(self._prop.key_speed_up):
             self._speed_up = True
-            print("I")
-        if event.key() == Qt.Key_K:
+        if event.key() == QKeySequence(self._prop.key_speed_down):
             self._speed_down = True
-            print("K")
 
 
     def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_J:
+        if event.key() == QKeySequence(self._prop.key_steer_left):
             self._steer_left = False
-        if event.key() == Qt.Key_L:
+        if event.key() == QKeySequence(self._prop.key_steer_right):
             self._steer_right = False
-        if event.key() == Qt.Key_I:
+        if event.key() == QKeySequence(self._prop.key_speed_up):
             self._speed_up = False
-        if event.key() == Qt.Key_K:
+        if event.key() == QKeySequence(self._prop.key_speed_down):
             self._speed_down = False
 
 
     def startSimulation(self):
         self._simulation_running = True
-        self.setCursor(Qt.BlankCursor)
-
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
-            self._simulation_timer.timeout.connect(self._simulate_frame)
             self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
             self._time_between_steps = int(1000 / self._prop.frames)
             self._simulation_timer.start(self._time_between_steps)
