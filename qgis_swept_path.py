@@ -370,8 +370,11 @@ class QgisSweptPath:
     def stopSimulation(self):
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
+
         self.canvas.unsetMapTool(self.simulator)
         self.iface.actionPan().trigger()
+        self.dockwidget.btnShowProperties.setEnabled(True)
+
         self._write_path_to_layer()
 
 
@@ -401,6 +404,7 @@ class QgisSweptPath:
             self.simulator.startSimulation()
 
             self.dockwidget.btnStartStopSimulation.setText("STOP")
+            self.dockwidget.btnShowProperties.setEnabled(False)
         else:
             self.iface.messageBar().pushMessage(
                 "Can't start simulation",
