@@ -38,6 +38,7 @@ import time
 from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .simulator import Simulator
+from .qgis_swept_path_enum import SimulationMode
 import os.path
 
 # Import SweptPath code
@@ -370,7 +371,7 @@ class QgisSweptPath:
     def stopSimulation(self):
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
-        if self.prop.advanced_steering:
+        if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
             self.canvas.removeEventFilter(self.simulator)
 
         self.dockwidget.btnShowProperties.setEnabled(True)
@@ -400,7 +401,7 @@ class QgisSweptPath:
             # Init simulator and start
             self.simulator.vehicle = self.vehicle
             self.simulator.properties = self.prop
-            if self.prop.advanced_steering:
+            if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
                 self.canvas.installEventFilter(self.simulator)
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)

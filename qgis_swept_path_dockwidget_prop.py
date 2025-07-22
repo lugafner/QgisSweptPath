@@ -1,4 +1,4 @@
-
+import math
 import os
 from typing import override
 
@@ -30,11 +30,12 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
-        self._speed_change_step: float = 0.03  # Steps to change speed in m/s per frame or step
-        self._steering_speed: float = 6.0  # Time in seconds for full left to full right
+        self._speed_change_step: float = 0.03  # Steps to change speed in m/s per click (step based)
+        self._steer_change_step: float = 0.10  # Radians per click (step based)
+        self._steering_time: float = 6.0  # Time in seconds for full left to full right (frame based)
+        self._acceleration: float = 2.5  # Acceleration and deceleration in m/s2 (frame based)
         self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops
         self._simulation_mode: int = SimulationMode.FRAME_BASED.value  # Integer representation of simulation mode enum
-        self._advanced_steering: bool = True  # Advanced steering mode on or off (no counter steer)
         self._key_steer_left: str = "J"  # Single key for steering left
         self._key_steer_right: str = "L"  # Single key for steering right
         self._key_speed_up: str = "I"  # Single key for speed up
@@ -54,10 +55,11 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_dissolve_path": "qgissweptpath/dissolve_path",
             "_dissolve_fields": "qgissweptpath/dissolve_fields",
             "_speed_change_step": "qgissweptpath/speed_change_step",
-            "_steering_speed": "qgissweptpath/steering_speed",
+            "_steer_change_step": "qgissweptpath/steer_change_step",
+            "_steering_time": "qgissweptpath/steering_time",
+            "_acceleration": "qgissweptpath/acceleration",
             "_minimum_speed": "qgissweptpath/minimum_speed",
             "_simulation_mode": "qgissweptpath/simulation_mode",
-            "_advanced_steering": "qgissweptpath/advanced_steering",
             "_key_steer_left": "qgissweptpath/key_steer_left",
             "_key_steer_right": "qgissweptpath/key_steer_right",
             "_key_speed_up": "qgissweptpath/key_speed_up",
@@ -94,9 +96,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propPrintInterval.valueChanged.connect(self._change_print_interval)
         self.propPrintDistance.valueChanged.connect(self._change_print_distance)
         self.propSpeedChangeStep.valueChanged.connect(self._change_speed_change_step)
-        self.propSteeringSpeed.valueChanged.connect(self._change_steering_speed)
+        self.propSteerChangeStep.valueChanged.connect(self._change_steer_change_step)
+        self.propSteeringTime.valueChanged.connect(self._change_steering_time)
+        self.propAcceleration.valueChanged.connect(self._change_acceleration)
         self.propMinimumSpeed.valueChanged.connect(self._change_minimum_speed)
-        self.propAdvancedSteering.stateChanged.connect(self._change_advanced_steering)
         self.propKeySteerLeft.textEdited.connect(self._change_key_steer_left)
         self.propKeySteerRight.textEdited.connect(self._change_key_steer_right)
         self.propKeySpeedUp.textEdited.connect(self._change_key_speed_up)
@@ -121,9 +124,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propPrintInterval.setValue(self._print_interval)
         self.propPrintDistance.setValue(self._print_distance)
         self.propSpeedChangeStep.setValue(self._speed_change_step)
-        self.propSteeringSpeed.setValue(self._steering_speed)
+        self.propSteerChangeStep.setValue(self._steer_change_step * 180.0 / math.pi)
+        self.propSteeringTime.setValue(self._steering_time)
+        self.propAcceleration.setValue(self._acceleration)
         self.propMinimumSpeed.setValue(self._minimum_speed)
-        self.propAdvancedSteering.setChecked(self._advanced_steering)
         self.propKeySteerLeft.setText(self._key_steer_left)
         self.propKeySteerRight.setText(self._key_steer_right)
         self.propKeySpeedUp.setText(self._key_speed_up)
@@ -235,16 +239,20 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._speed_change_step = float(self.propSpeedChangeStep.value())
 
 
+    def _change_steer_change_step(self):
+        self._steer_change_step = float(self.propSteerChangeStep.value() * math.pi / 180.0)
+
+
     def _change_minimum_speed(self):
         self._minimum_speed = float(self.propMinimumSpeed.value())
 
 
-    def _change_steering_speed(self):
-        self._steering_speed = float(self.propSteeringSpeed.value())
+    def _change_steering_time(self):
+        self._steering_time = float(self.propSteeringTime.value())
 
 
-    def _change_advanced_steering(self):
-        self._advanced_steering = bool(self.propAdvancedSteering.isChecked())
+    def _change_acceleration(self):
+        self._acceleration = float(self.propAcceleration.value())
 
 
     def _change_key_steer_left(self):
@@ -349,15 +357,27 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
 
     @property
-    def steering_speed(self) -> float:
-        """Steering speed in seconds from full left to full right"""
-        return self._steering_speed
+    def steering_time(self) -> float:
+        """Steering time in seconds from full left to full right"""
+        return self._steering_time
+
+
+    @property
+    def acceleration(self) -> float:
+        """Acceleration or deceleration in m/s2"""
+        return self._acceleration
 
 
     @property
     def speed_change_step(self) -> float:
-        """Step to change speed"""
+        """Step to change speed in step based mode"""
         return self._speed_change_step
+
+
+    @property
+    def steer_change_step(self) -> float:
+        """Step to change steering in step based mode"""
+        return self._steer_change_step
 
 
     @property
@@ -394,12 +414,6 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def key_steer_right(self) -> str:
         """Key steer right as string"""
         return self._key_steer_right
-
-
-    @property
-    def advanced_steering(self) -> bool:
-        """Advanced steering on or off (no counter steering)"""
-        return self._advanced_steering
 
 
     # Setters

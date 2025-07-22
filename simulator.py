@@ -9,6 +9,7 @@ from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
 from qgis.gui import QgsMapTool
+from reportlab.lib.pagesizes import elevenSeventeen
 
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .vehicle import Vehicle
@@ -33,8 +34,8 @@ class Simulator(QObject):
 
         # Number of frames to steer from center to full steering angle
         self._frames_half_steering: float = None
-        # Time between steps in milliseconds
-        self._time_between_steps: int = None
+        # Time between steps in seconds
+        self._time_between_steps: float = None
         # Counter for distance driven (used for printing path points with frame based simulation)
         self._distance_counter: float = 0.0
         # Counter for steps (used for printing path points with step based simulation)
@@ -84,11 +85,11 @@ class Simulator(QObject):
     def startSimulation(self):
         self._simulation_running = True
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
-            self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
-            self._time_between_steps = int(1000 / self._prop.frames)
+            self._frames_half_steering = self._prop.steering_time * 0.5 * self._prop.frames
+            self._time_between_steps = float(1.0 / self._prop.frames)
             self._distance_counter = 0.0
             self.storePath.emit()
-            self._simulation_timer.start(self._time_between_steps)
+            self._simulation_timer.start(int(self._time_between_steps * 1000))
 
         elif self._prop.simulation_mode == SimulationMode.STEP_BASED:
             self._step_counter = 0
@@ -115,35 +116,31 @@ class Simulator(QObject):
 
 
     def speedUp(self):
-        if not self._speed_down:
-            self._speed_up = True
-        self._speed_down = False
+        if self._prop.simulation_mode == SimulationMode.STEP_BASED:
+            self.vehicle.speed_up(self._prop.speed_change_step)
 
 
     def speedDown(self):
-        if not self._speed_up:
-            self._speed_down = True
-        self._speed_up = False
+        if self._prop.simulation_mode == SimulationMode.STEP_BASED:
+            self.vehicle.speed_down(self._prop.speed_change_step)
 
 
     def steerRight(self):
-        if not self._steer_left:
-            self._steer_right = True
-        self._steer_left = False
+        if self._prop.simulation_mode == SimulationMode.STEP_BASED:
+            self.vehicle.steer_right(self._prop.steer_change_step)
 
 
     def steerLeft(self):
-        if not self._steer_right:
-            self._steer_left = True
-        self._steer_right = False
+        if self._prop.simulation_mode == SimulationMode.STEP_BASED:
+            self.vehicle.steer_left(self._prop.steer_change_step)
 
 
     def _simulate_frame(self):
         if self._speed_up:
-            self._vehicle.speed_up(self._prop.speed_change_step)
+            self._vehicle.speed_up(self._time_between_steps * self._prop.acceleration)
 
         if self._speed_down:
-            self._vehicle.speed_down(self._prop.speed_change_step)
+            self._vehicle.speed_down(self._time_between_steps * self._prop.acceleration)
 
         if self._steer_right:
             self._vehicle.steer_right(self._vehicle.max_steering_angle / self._frames_half_steering)
@@ -151,7 +148,7 @@ class Simulator(QObject):
         if self._steer_left:
             self._vehicle.steer_left(self._vehicle.max_steering_angle / self._frames_half_steering)
 
-        drive_distance = float(self._time_between_steps) / 1000.0 * self._vehicle.speed
+        drive_distance = float(self._time_between_steps * self._vehicle.speed)
         if self._vehicle.speed > self._prop.minimum_speed:
             self._vehicle.step(drive_distance)
 
@@ -165,18 +162,6 @@ class Simulator(QObject):
 
     def _simulate_step(self):
         while self._simulation_running:
-            if self._speed_up:
-                self._vehicle.speed_up(self._prop.speed_change_step)
-
-            if self._speed_down:
-                self._vehicle.speed_down(self._prop.speed_change_step)
-
-            if self._steer_right:
-                self._vehicle.steer_right(self._vehicle.max_steering_angle / self._frames_half_steering)
-
-            if self._steer_left:
-                self._vehicle.steer_left(self._vehicle.max_steering_angle / self._frames_half_steering)
-
             if self._vehicle.speed > self._prop.minimum_speed:
                 self._vehicle.step(self._prop.step_distance)
 
@@ -185,9 +170,8 @@ class Simulator(QObject):
                     self._step_counter = 0
                     self.storePath.emit()
 
+                self.drawVehicle.emit()
                 time.sleep(self._prop.step_distance / self.vehicle.speed)
-
-            self.drawVehicle.emit()
 
 
     @property
