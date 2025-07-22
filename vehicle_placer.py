@@ -4,7 +4,7 @@ from qgis.core import QgsPointXY, QgsGeometry, Qgis
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 
-from .coord import CoordUtils, PolarCoord, CartesianCoord
+from .coord import CoordUtils, CartesianCoord
 from .vehicle import Vehicle
 
 
@@ -129,7 +129,8 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         Method is called, when the right mouse button is pressed
         The placement process will be stopped
         """
-        self._vehicle.steering_angle = 0
+        self._vehicle.steering_angle = 0.0
+        self._vehicle.speed = 0.0
         self._canvas.scene().removeItem(self._marker)  # Remove the rubber band
         self._click_counter = 0  # Set click counter to always start with positioning
         self.placed.emit()  # Emit the signal, that the vehicle is placed

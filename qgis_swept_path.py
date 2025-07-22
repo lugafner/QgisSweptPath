@@ -25,18 +25,17 @@
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsPoint, QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsSettings, QgsProject, QgsVectorFileWriter
+from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
-from threading import Thread
 from uuid import uuid4
-
-import time
 
 # Initialize Qt resources from file resources.py
 
 # Import the code for the DockWidget
 from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
+from .simulator import Simulator
+from .qgis_swept_path_enum import SimulationMode
 import os.path
 
 # Import SweptPath code
@@ -75,6 +74,8 @@ class QgisSweptPath:
         self.prop: QgisSweptPathDockWidgetProp = None  # Advanced property widget class
 
         # SweptPath fields
+        self.simulator: Simulator = None  # Simulator instance
+
         self.simulation_running: bool = False  # Simulation is running
         self._simulation_id: str = ""  # Simulation ID for layer features identification
         self.vehicle: Vehicle = None  # The vehicle to simulate
@@ -87,6 +88,7 @@ class QgisSweptPath:
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
         self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
+
 
     def run(self):
         """Run method that loads and starts the plugin"""
@@ -101,6 +103,7 @@ class QgisSweptPath:
                 # Create the dockwidget
                 self.dockwidget = QgisSweptPathDockWidgetBase()
                 self.prop = QgisSweptPathDockWidgetProp()
+                self.simulator = Simulator(self.canvas)
 
                 # Setup Controls
                 self.setupControls()
@@ -115,6 +118,9 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
             self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
+            # Signals from simulator
+            self.simulator.drawVehicle.connect(self._draw_vehicle)
+            self.simulator.storePath.connect(self._store_path_points)
 
             self.setupLayers()
 
@@ -122,26 +128,27 @@ class QgisSweptPath:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
+
     def setupControls(self):
         """Adds all actions for the controls"""
         # Actions
         self.add_action("Steer left",
-                        self.steer_left,
+                        self.simulator.steerLeft,
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+J")
         self.add_action("Steer right",
-                        self.steer_right,
+                        self.simulator.steerRight,
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+L")
         self.add_action("Speed up",
-                        self.speed_up,
+                        self.simulator.speedUp,
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+I")
         self.add_action("Speed down",
-                        self.speed_down,
+                        self.simulator.speedDown,
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+K")
@@ -341,48 +348,33 @@ class QgisSweptPath:
 
         return action
 
+
     def update_speed(self):
         self.dockwidget.txtSpeed.setText("{:.2f} km/h".format(self.vehicle.speed * 3.6))
+
 
     def update_steering(self):
         self.dockwidget.txtSteeringAngle.setText("{:.2f} °".format(self.vehicle.steering_angle / 3.14159 * 180))
 
-    def speed_up(self):
-        if self.simulation_running:
-            self.vehicle.speed_up()
-            self.update_speed()
-
-    def speed_down(self):
-        if self.simulation_running:
-            self.vehicle.speed_down()
-            self.update_speed()
-
-    def steer_left(self):
-        if self.simulation_running:
-            self.vehicle.steer_left()
-            self.update_steering()
-    
-    def steer_right(self):
-        if self.simulation_running:
-            self.vehicle.steer_right()
-            self.update_steering()
 
     def startStopSimulation(self):
         # Starts or stops the simulation based on current status
-        if self.simulation_running:
+        if self.simulator.simulation_running:
             self.stopSimulation()
         else:
             self.startSimulation()
-    
-    def stopSimulation(self):
-        self.simulation_running = False
-        self.dockwidget.btnStartStopSimulation.setText("START")
-        if self.prop.print_path:
-            if self._print_iteration != 0:
-                self._print_iteration = self.prop.print_interval
-                self._store_path_points()
 
-            self._write_path_to_layer()
+
+    def stopSimulation(self):
+        self.dockwidget.btnStartStopSimulation.setText("START")
+        self.simulator.stopSimulation()
+        if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
+            self.canvas.removeEventFilter(self.simulator)
+
+        self.dockwidget.btnShowProperties.setEnabled(True)
+
+        self._write_path_to_layer()
+
 
     def startSimulation(self):
         if (self.dockwidget.txtSimulationId.text() is None
@@ -403,11 +395,16 @@ class QgisSweptPath:
             self.update_steering()
             self.update_speed()
 
-            # Start simulation in separate thread
-            self.simulation_running = True
-            t = Thread(target=self.simulate, args=())
-            t.start()
+            # Init simulator and start
+            self.simulator.vehicle = self.vehicle
+            self.simulator.properties = self.prop
+            if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
+                self.canvas.installEventFilter(self.simulator)
+            self.simulator.startSimulation()
+            self.canvas.setFocus(Qt.OtherFocusReason)
+
             self.dockwidget.btnStartStopSimulation.setText("STOP")
+            self.dockwidget.btnShowProperties.setEnabled(False)
         else:
             self.iface.messageBar().pushMessage(
                 "Can't start simulation",
@@ -415,26 +412,13 @@ class QgisSweptPath:
                 level=Qgis.Critical
             )
 
-    def simulate(self):
-        self._print_iteration = self.prop.print_interval  # Set iteration to interval so the point will be printed on first step
-        while self.simulation_running:
-            if self.vehicle.speed > 0.05:
-                self.vehicle.step()
-
-                if not self.canvas.isDrawing():
-                    self._draw_vehicle()
-                time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
-
-                if self.prop.print_path:
-                    self._store_path_points()
-            else:
-                pass
 
     def _setup_vehicle(self):
         # TODO: Add a vehicle factory
         trailer = Gelenkbus1875Trailer()
         self.vehicle = MercedesCitaro()
         #  self.vehicle.trailer = trailer
+
 
     def _place_vehicle(self):
         # Place the vehicle with the VehiclePlacer class
@@ -449,6 +433,7 @@ class QgisSweptPath:
                 level=Qgis.Critical
             )
 
+
     def _vehicle_placed(self):
         # Unset the VehiclePlacer and draw the vehicle
         # Method is called, when the VehiclePlacer is finish
@@ -456,16 +441,21 @@ class QgisSweptPath:
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
         self._draw_vehicle()
-        
-    def _draw_vehicle(self):
-        self._vehicle_layer.dataProvider().truncate()
-        for v, f in self._vehicle_features.items():
-            f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
-            f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
-            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
-            self._vehicle_layer.dataProvider().addFeatures([f])
 
-        self._vehicle_layer.triggerRepaint()
+
+    def _draw_vehicle(self):
+        if not self.canvas.isDrawing():
+            self._vehicle_layer.dataProvider().truncate()
+            for v, f in self._vehicle_features.items():
+                f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+                f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
+                f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+                self._vehicle_layer.dataProvider().addFeatures([f])
+
+            self._vehicle_layer.triggerRepaint()
+            self.update_speed()
+            self.update_steering()
+
 
     def _create_vehicle_drawing(self):
         self._vehicle_layer.dataProvider().truncate()
@@ -485,14 +475,11 @@ class QgisSweptPath:
 
         self._vehicle_layer.triggerRepaint()
 
+
     def _store_path_points(self):
         # Store the vehicle points in a list
-        if self._print_iteration == self.prop.print_interval:
-            for p in self._path_points:
-                p.add_point(getattr(p.vehicle, p.vehicle_part))
-            self._print_iteration = 0
-        else:
-            self._print_iteration += 1
+        for p in self._path_points:
+            p.add_point(getattr(p.vehicle, p.vehicle_part))
 
 
     def _write_path_to_layer(self):
