@@ -30,7 +30,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
-        self._speed_change_step: float = 0.01  # Steps to change speed in m/s
+        self._speed_change_step: float = 0.03  # Steps to change speed in m/s per frame or step
         self._steering_speed: float = 6.0  # Time in seconds for full left to full right
         self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops
         self._simulation_mode: int = SimulationMode.FRAME_BASED.value  # Integer representation of simulation mode enum
