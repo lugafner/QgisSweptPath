@@ -27,10 +27,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
-from threading import Thread
 from uuid import uuid4
-
-import time
 
 # Initialize Qt resources from file resources.py
 

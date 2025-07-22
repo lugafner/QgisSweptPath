@@ -1,15 +1,12 @@
 # Simulator class
 import time
 
-from enum import Enum
 from threading import Thread
-from typing import override, Optional
+from typing import Optional
 
 from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
-from qgis.gui import QgsMapTool
-from reportlab.lib.pagesizes import elevenSeventeen
 
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .vehicle import Vehicle

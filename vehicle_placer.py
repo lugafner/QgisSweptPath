@@ -4,7 +4,7 @@ from qgis.core import QgsPointXY, QgsGeometry, Qgis
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 
-from .coord import CoordUtils, PolarCoord, CartesianCoord
+from .coord import CoordUtils, CartesianCoord
 from .vehicle import Vehicle
 
 
