@@ -35,6 +35,10 @@ class Simulator(QObject):
         self._frames_half_steering: float = None
         # Time between steps in milliseconds
         self._time_between_steps: int = None
+        # Counter for distance driven (used for printing path points with frame based simulation)
+        self._distance_counter: float = 0.0
+        # Counter for steps (used for printing path points with step based simulation)
+        self._step_counter: int = 0
 
         # Flags for steering and speed change
         self._steer_right: bool = False
@@ -82,9 +86,13 @@ class Simulator(QObject):
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
             self._frames_half_steering = self._prop.steering_speed / 2 * self._prop.frames
             self._time_between_steps = int(1000 / self._prop.frames)
+            self._distance_counter = 0.0
+            self.storePath.emit()
             self._simulation_timer.start(self._time_between_steps)
 
         elif self._prop.simulation_mode == SimulationMode.STEP_BASED:
+            self._step_counter = 0
+            self.storePath.emit()
             t = Thread(target=self._simulate_step, args=())
             t.start()
             
@@ -103,7 +111,7 @@ class Simulator(QObject):
         self._simulation_running = False
 
         self.drawVehicle.emit()
-        # self.storePath.emit()
+        self.storePath.emit()
 
 
     def speedUp(self):
@@ -143,14 +151,17 @@ class Simulator(QObject):
         if self._steer_left:
             self._vehicle.steer_left(self._vehicle.max_steering_angle / self._frames_half_steering)
 
+        drive_distance = float(self._time_between_steps) / 1000.0 * self._vehicle.speed
         if self._vehicle.speed > self._prop.minimum_speed:
-            self._vehicle.step(float(self._time_between_steps) / 1000.0 * self._vehicle.speed)
+            self._vehicle.step(drive_distance)
+
+            self._distance_counter += drive_distance
+            if self._distance_counter >= self._prop.print_distance:
+                self._distance_counter = 0.0
+                self.storePath.emit()
 
         self.drawVehicle.emit()
 
-        # TODO check if must store (draw vehicle property and steps/distance)
-        # self.storePath.emit()
-        
 
     def _simulate_step(self):
         while self._simulation_running:
@@ -169,12 +180,14 @@ class Simulator(QObject):
             if self._vehicle.speed > self._prop.minimum_speed:
                 self._vehicle.step(self._prop.step_distance)
 
+                self._step_counter += 1
+                if self._step_counter == self._prop.print_interval:
+                    self._step_counter = 0
+                    self.storePath.emit()
+
+                time.sleep(self._prop.step_distance / self.vehicle.speed)
+
             self.drawVehicle.emit()
-
-            # TODO check if must store (draw vehicle property and steps/distance)
-            # self.storePath.emit()
-
-            time.sleep(self.vehicle.simulation_step / self.vehicle.speed)
 
 
     @property
