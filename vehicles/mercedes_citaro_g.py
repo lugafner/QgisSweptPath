@@ -1,6 +1,7 @@
 
 # Vehicle Mercedes Citaro G
 from ..vehicle import Vehicle
+from .mercedes_citaro_g_trailer import MercedesCitaroGTrailer
 import math
 
 class MercedesCitaroG(Vehicle):
@@ -23,8 +24,8 @@ class MercedesCitaroG(Vehicle):
         self._max_steering_angle = 49.5 / 180 * math.pi  # In radians
 
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle = True  # solo bus
-        self._trailer = None  # solo bus
+        self._is_main_vehicle = True
+        self.trailer = MercedesCitaroGTrailer()  # Trailer. Always use setter of property
         self._connection_point = 10.530  # meter from front
 
         # Vehicle type

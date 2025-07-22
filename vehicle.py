@@ -2,6 +2,7 @@ import math
 import inspect
 
 from pathlib import Path
+from typing import Optional
 
 from .coord import PolarCoord, CartesianCoord, CoordUtils
 
@@ -23,7 +24,7 @@ class Vehicle:
         
         # Trailer and vehicle hierarchy
         self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Vehicle = None  # Init with None for standard vehicle
+        self._trailer: Optional[Vehicle] = None  # Init with None for standard vehicle
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
         
@@ -205,14 +206,6 @@ class Vehicle:
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
-    # Not used since rear wheel path is calculated on straight segments
-    # Function kept for later use when simulating rear wheel steering
-    def _get_driving_vector_rear(self) -> PolarCoord:
-        center_angle = self._get_center_angle()
-        outer_angle = (math.pi  - center_angle) / 2
-        driving_vector_angle = (math.pi / 2) - outer_angle
-        driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
-        return PolarCoord(driving_vector_distance, driving_vector_angle)
 
     def _drive(self, distance: float):
         """
@@ -232,7 +225,7 @@ class Vehicle:
 
         # Simulate trailer
         if self._trailer:
-            self._trailer.step_trailer(self._global_cp, self._trailer_angle)
+            self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
 
 
     def step(self, distance: float):
