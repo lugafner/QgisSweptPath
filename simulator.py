@@ -85,9 +85,10 @@ class Simulator(QgsMapTool):
 
 
     def stopSimulation(self):
-        self._simulation_running = False
         if self._prop.simulation_mode == SimulationMode.FRAME_BASED:
             self._simulation_timer.stop()
+
+        self._simulation_running = False
 
         self.drawVehicle.emit()
         # self.storePath.emit()
@@ -137,7 +138,7 @@ class Simulator(QgsMapTool):
 
         # TODO check if must store (draw vehicle property and steps/distance)
         # self.storePath.emit()
-
+        
 
     def _simulate_step(self):
         while self._simulation_running:
