@@ -105,7 +105,7 @@ class QgisSweptPath:
                 # Create the dockwidget
                 self.dockwidget = QgisSweptPathDockWidgetBase()
                 self.prop = QgisSweptPathDockWidgetProp()
-                self.simulator = Simulator(self.iface)
+                self.simulator = Simulator(self.canvas)
 
                 # Setup Controls
                 self.setupControls()
@@ -370,9 +370,9 @@ class QgisSweptPath:
     def stopSimulation(self):
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
+        if self.prop.advanced_steering:
+            self.canvas.removeEventFilter(self.simulator)
 
-        self.canvas.unsetMapTool(self.simulator)
-        self.iface.actionPan().trigger()
         self.dockwidget.btnShowProperties.setEnabled(True)
 
         self._write_path_to_layer()
@@ -400,8 +400,10 @@ class QgisSweptPath:
             # Init simulator and start
             self.simulator.vehicle = self.vehicle
             self.simulator.properties = self.prop
-            self.canvas.setMapTool(self.simulator)
+            if self.prop.advanced_steering:
+                self.canvas.installEventFilter(self.simulator)
             self.simulator.startSimulation()
+            self.canvas.setFocus(Qt.OtherFocusReason)
 
             self.dockwidget.btnStartStopSimulation.setText("STOP")
             self.dockwidget.btnShowProperties.setEnabled(False)

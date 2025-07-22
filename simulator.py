@@ -3,7 +3,7 @@ import time
 
 from enum import Enum
 from threading import Thread
-from typing import override
+from typing import override, Optional
 
 from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
 from qgis.PyQt.QtGui import QKeySequence
@@ -15,14 +15,14 @@ from .vehicle import Vehicle
 from .qgis_swept_path_enum import SimulationMode
 
 
-class Simulator(QgsMapTool):
+class Simulator(QObject):
     # Signals
     drawVehicle: pyqtSignal = pyqtSignal(name="drawVehicle")
     storePath: pyqtSignal = pyqtSignal(name="storePath")
 
-    def __init__(self, iface):
+    def __init__(self, parent: Optional[QObject] = None):
         """Constructor"""
-        QgsMapTool.__init__(self, iface.mapCanvas())
+        super().__init__(parent)
 
         self._vehicle: Vehicle = None
         self._prop: QgisSweptPathDockWidgetProp = None
@@ -43,26 +43,38 @@ class Simulator(QgsMapTool):
         self._speed_down: bool = False
 
 
-    def keyPressEvent(self, event):
-        if event.key() == QKeySequence(self._prop.key_steer_left):
-            self._steer_left = True
-        if event.key() == QKeySequence(self._prop.key_steer_right):
-            self._steer_right = True
-        if event.key() == QKeySequence(self._prop.key_speed_up):
-            self._speed_up = True
-        if event.key() == QKeySequence(self._prop.key_speed_down):
-            self._speed_down = True
+    def eventFilter(self, caller: QObject, event: QEvent):
+        if event.type() == QEvent.KeyPress:
+            if event.key() == QKeySequence(self._prop.key_steer_left):
+                self._steer_left = True
+                return True
+            if event.key() == QKeySequence(self._prop.key_steer_right):
+                self._steer_right = True
+                return True
+            if event.key() == QKeySequence(self._prop.key_speed_up):
+                self._speed_up = True
+                return True
+            if event.key() == QKeySequence(self._prop.key_speed_down):
+                self._speed_down = True
+                return True
+            return False
 
+        if  event.type() == QEvent.KeyRelease:
+            if event.key() == QKeySequence(self._prop.key_steer_left):
+                self._steer_left = False
+                return True
+            if event.key() == QKeySequence(self._prop.key_steer_right):
+                self._steer_right = False
+                return True
+            if event.key() == QKeySequence(self._prop.key_speed_up):
+                self._speed_up = False
+                return True
+            if event.key() == QKeySequence(self._prop.key_speed_down):
+                self._speed_down = False
+                return True
+            return False
 
-    def keyReleaseEvent(self, event):
-        if event.key() == QKeySequence(self._prop.key_steer_left):
-            self._steer_left = False
-        if event.key() == QKeySequence(self._prop.key_steer_right):
-            self._steer_right = False
-        if event.key() == QKeySequence(self._prop.key_speed_up):
-            self._speed_up = False
-        if event.key() == QKeySequence(self._prop.key_speed_down):
-            self._speed_down = False
+        return False
 
 
     def startSimulation(self):
