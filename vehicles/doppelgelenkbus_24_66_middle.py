@@ -1,6 +1,7 @@
 
 # Vehicle Doppelgelenkbus 24.66m Hess Trolleybus (Middle section)
 from ..vehicle import Vehicle
+from .doppelgelenkbus_24_66_tail import Doppelgelenkbus2466Tail
 
 class Doppelgelenkbus2466Middle(Vehicle):
     vehicle_name = "Doppelgelenkbus 24.66m Middle"
@@ -24,7 +25,7 @@ class Doppelgelenkbus2466Middle(Vehicle):
         self._max_steering_angle = 0.0  # Not needed for trailer
 
         # Trailer and vehicle hierarchy
-        self.trailer = None  # No trailer
+        self.trailer = Doppelgelenkbus2466Tail()
         self._connection_point = 6.588  # meter from front (negative = point is in front of vehicle)
 
         # Vehicle type

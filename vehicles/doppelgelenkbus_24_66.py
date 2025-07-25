@@ -1,6 +1,7 @@
 
 # Vehicle Doppelgelenkbus 24.66m (Hess Trolleybus)
 from ..vehicle import Vehicle
+from .doppelgelenkbus_24_66_middle import Doppelgelenkbus2466Middle
 import math
 
 class Doppelgelenkbus2466(Vehicle):
@@ -25,7 +26,7 @@ class Doppelgelenkbus2466(Vehicle):
         self._max_steering_angle = 49.5 / 180 * math.pi  # In radians
 
         # Trailer and vehicle hierarchy
-        self.trailer = None  # solo bus
+        self.trailer = Doppelgelenkbus2466Middle()
         self._connection_point = 10.401  # meter from front
 
         # Vehicle type
