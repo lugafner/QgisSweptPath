@@ -39,7 +39,7 @@ class Vehicle:
         self._has_rear_axle: bool = True  # When false, no rear axle will be drawn
 
         # Graphics
-        self._symbol: str = "./vehicles/vehicle.svg"
+        self._symbol: str = ""  # Path to svg symbol relative to this file. Empty for generic vehicle
         self._symbol_size_x: float = 15.0 # SVG symbol size x in QGIS style units (usually meters)
         self._symbol_size_y: float = 2.5  # SVG symbol size y in QGIS style units (usually meters)
         # Offset to Place the symbol. Base point is point F.
