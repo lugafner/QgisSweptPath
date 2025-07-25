@@ -8,10 +8,15 @@ from .coord import PolarCoord, CartesianCoord, CoordUtils
 
 
 class Vehicle:
+    vehicle_name: str = "Vehicle"
+    """Name of vehicle. Will be shown in combo box for vehicle selection"""
+    is_main_vehicle: bool = False
+    """Set as main vehicle or just as trailer part. Only main vehicles are shown for vehicle selection"""
+
+
     def __init__(self):
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
-        self._vehicle_name: str = "Vehicle"
         # Body
         self._body_length: float = 15.00  # meter
         self._body_width: float = 2.50  # meter
@@ -23,8 +28,8 @@ class Vehicle:
         self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Optional[Vehicle] = None  # Init with None for standard vehicle
+        self._trailer: Optional[Vehicle] = None
+        """Create trailer object here, if the vehicle has a trailer. Set to None, if the vehicle has no trailer"""
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
         
@@ -109,7 +114,7 @@ class Vehicle:
         Updates the vehicle parts list when the vehicle is a main vehicle
         Method is only called when creating the vehicle and when a trailer is added
         """    
-        if self._is_main_vehicle:
+        if self.is_main_vehicle:
             self._vehicle_parts = [self]
             child_vehicle = self._trailer
             while child_vehicle is not None:
@@ -494,23 +499,9 @@ class Vehicle:
         return self._has_rear_axle
 
     @property
-    def is_main_vehicle(self) -> bool:
-        """
-        Returns true, if the vehicle is the main vehicle
-        The main vehicle is the driven vehicle. This vehicle could tow a trailer
-        """
-        return self._is_main_vehicle
-
-    @property
     def is_placed(self) -> bool:
         """
         Returns true, if the vehicle is placed
         """
         return self._vehicle_is_placed
 
-    @property
-    def vehicle_name(self) -> str:
-        """
-        Returns the vehicle name
-        """
-        return self._vehicle_name
