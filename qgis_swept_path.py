@@ -114,12 +114,26 @@ class QgisSweptPath:
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
             self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
             self.dockwidget.btnReloadVehicleList.clicked.connect(self.setupVehicleList)
+            self.dockwidget.chbCreateVehicle.clicked.connect(self._check_create_vehicle)
+            self.dockwidget.chbPlaceVehicle.clicked.connect(self._check_place_vehicle)
+            self.dockwidget.chbVehicleLayer.clicked.connect(self._check_create_vehicle_layer)
+            self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
+
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
             self.simulator.storePath.connect(self._store_path_points)
 
+            # Signals from properties
+            self.prop.vehicleLayerChanged.connect(self.setupVehicleLayer)
+            self.prop.pathLayerChanged.connect(self.setupPathLayer)
+
             self.setupLayers()
             self.setupVehicleList()
+
+            # Update status check boxes
+            if self.vehicle:
+                self.dockwidget.chbCreateVehicle.setChecked(True)
+                self.dockwidget.chbPlaceVehicle.setChecked(self.vehicle.is_placed)
 
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -163,7 +177,11 @@ class QgisSweptPath:
         If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
         (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
         """
+        self.setupVehicleLayer()
+        self.setupPathLayer()
 
+
+    def setupVehicleLayer(self):
         # Vehicle layer
         if self.prop.vehicle_layer_id is "":
             # Create new layer if there is no id stored in the project
@@ -182,7 +200,10 @@ class QgisSweptPath:
             else:
                 # Save reference to the existing layer and show the id in the text field
                 self._vehicle_layer = vehicle_layer
+                self.dockwidget.chbVehicleLayer.setChecked(True)
 
+
+    def setupPathLayer(self):
         # Path layer (details see vehicle layer above)
         if self.prop.path_layer_id is "":
             self.iface.messageBar().pushMessage(
@@ -200,6 +221,7 @@ class QgisSweptPath:
                 )
             else:
                 self._path_layer = path_layer
+                self.dockwidget.chbPathLayer.setChecked(True)
 
 
     def setupVehicleList(self):
@@ -265,7 +287,8 @@ class QgisSweptPath:
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
         # disconnects
-        self.stopSimulation()
+        if self.simulator and self.simulator.simulation_running:
+            self.stopSimulation()
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
         self.pluginIsActive = False
 
@@ -428,15 +451,18 @@ class QgisSweptPath:
 
 
     def _setup_vehicle(self):
+        self.dockwidget.chbCreateVehicle.setChecked(False)
         selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
         vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
 
         vehicle_module = __import__(vehicle_item[1], fromlist=[vehicle_item[0]])
         vehicle_class = getattr(vehicle_module, vehicle_item[0])
         self.vehicle = vehicle_class()
+        self.dockwidget.chbCreateVehicle.setChecked(True)
 
 
     def _place_vehicle(self):
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
         # Place the vehicle with the VehiclePlacer class
         if self.vehicle is not None:
             self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
@@ -457,6 +483,7 @@ class QgisSweptPath:
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
         self._draw_vehicle()
+        self.dockwidget.chbPlaceVehicle.setChecked(True)
 
 
     def _draw_vehicle(self):
@@ -518,6 +545,14 @@ class QgisSweptPath:
         """
         Create a new in memory vector layer to show the vehicle during simulation
         """
+        if self.dockwidget.chbVehicleLayer.isChecked():
+            self.iface.messageBar().pushMessage(
+                "Vehicle layer already exists",
+                "To create a new vehicle layer uncheck this option first",
+                level=Qgis.Info
+            )
+            return
+
         if self._vehicle_layer is not None:
             # Print the message, when the vehicle layer already exists
             self.iface.messageBar().pushMessage(
@@ -552,6 +587,14 @@ class QgisSweptPath:
         """
         Create a new vector layer to print the paths
         """
+        if self.dockwidget.chbPathLayer.isChecked():
+            self.iface.messageBar().pushMessage(
+                "Path layer already exists",
+                "To create a new path layer uncheck this option first",
+                level=Qgis.Info
+            )
+            return
+
         if self._path_layer is not None:
             # Print the message, when the path layer already exists
             self.iface.messageBar().pushMessage(
@@ -613,6 +656,43 @@ class QgisSweptPath:
             )
 
 
+    def _check_place_vehicle(self):
+        self.iface.messageBar().pushMessage(
+            "Place vehicle",
+            "Status can not be checked manually. Use the button for placing the vehicle",
+            level=Qgis.Info,
+            duration=3
+        )
+        if self.dockwidget.chbPlaceVehicle.isChecked():
+            self.dockwidget.chbPlaceVehicle.setChecked(False)
+        else:
+            self.dockwidget.chbPlaceVehicle.setChecked(True)
+
+
+    def _check_create_vehicle(self):
+        self.iface.messageBar().pushMessage(
+            "Create vehicle",
+            "Status can not be checked manually. Use the button for creating a new vehicle",
+            level=Qgis.Info,
+            duration=3
+        )
+        if self.dockwidget.chbCreateVehicle.isChecked():
+            self.dockwidget.chbCreateVehicle.setChecked(False)
+        else:
+            self.dockwidget.chbCreateVehicle.setChecked(True)
+
+
+    def _check_create_vehicle_layer(self):
+        if self.dockwidget.chbVehicleLayer.isChecked():
+            self.dockwidget.chbVehicleLayer.setChecked(False)
+            self.setupVehicleLayer()
+
+
+    def _check_create_path_layer(self):
+        if self.dockwidget.chbPathLayer.isChecked():
+            self.dockwidget.chbPathLayer.setChecked(False)
+            self.setupPathLayer()
+
+
     def _show_properties(self):
         self.prop.show()
-
