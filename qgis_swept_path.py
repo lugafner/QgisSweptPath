@@ -113,6 +113,7 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
             self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
+            self.dockwidget.btnReloadVehicleList.clicked.connect(self.setupVehicleList)
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
             self.simulator.storePath.connect(self._store_path_points)
@@ -206,10 +207,16 @@ class QgisSweptPath:
         Get the dict from the vehicle Factory
         Set up the combo box for vehicle selection
         """
+        # Get package list from properties and get classes with vehicle factory
         package_list: list[str] = self.prop.vehicle_packages.split(";")
         self._vehicle_list = VehicleFactory.get_classes(package_list)
-        for k, v in self._vehicle_list.items():
-            self.dockwidget.cmboVehicleSelect.addItems([k])
+
+        # Remove all existing items
+        self.dockwidget.cmboVehicleSelect.clear()
+
+        # Add all Vehicles from vehicle list
+        for vehicle_name, _ in self._vehicle_list.items():
+            self.dockwidget.cmboVehicleSelect.addItem(vehicle_name)
 
 
     def setup_path_points(self):

@@ -72,50 +72,77 @@
         <property name="horizontalSpacing">
          <number>5</number>
         </property>
-        <item row="13" column="0">
-         <widget class="QLabel" name="lblSpeed">
-          <property name="text">
-           <string>Speed</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
+        <item row="4" column="0" colspan="3">
+         <widget class="QComboBox" name="cmboVehicleSelect">
+          <property name="minimumSize">
            <size>
-            <width>20</width>
+            <width>0</width>
             <height>0</height>
            </size>
           </property>
-         </spacer>
-        </item>
-        <item row="5" column="1">
-         <widget class="QPushButton" name="btnPlaceVehicle">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Place Vehicle</string>
-          </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="1" column="0" colspan="2">
          <widget class="QPushButton" name="btnAddVehicleLayer">
           <property name="text">
            <string>New Vehicle Layer</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="11" column="0" colspan="2">
+         <widget class="QLabel" name="lblSteeringAngle">
+          <property name="text">
+           <string>Steering angle</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0" colspan="4">
+         <widget class="QPushButton" name="btnStartStopSimulation">
+          <property name="text">
+           <string>START</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2" colspan="2">
+         <widget class="QLineEdit" name="txtSimulationId">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" colspan="2">
+         <widget class="QPushButton" name="btnAddPathLayer">
+          <property name="text">
+           <string>New Path Layer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="3">
+         <widget class="QPushButton" name="btnReloadVehicleList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Reload</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" colspan="2">
          <widget class="QPushButton" name="btnCreateVehicle">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -128,7 +155,50 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
+        <item row="2" column="0" colspan="4">
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2" colspan="2">
+         <widget class="QPushButton" name="btnPlaceVehicle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Place Vehicle</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0" colspan="4">
+         <widget class="QPushButton" name="btnShowProperties">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>Show Property Dialog</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="0" colspan="4">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="8" column="0" colspan="2">
          <widget class="QLabel" name="lblSimulationId">
           <property name="layoutDirection">
            <enum>Qt::RightToLeft</enum>
@@ -141,31 +211,59 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="0">
-         <widget class="QLabel" name="lblSteeringAngle">
-          <property name="text">
-           <string>Steering angle</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="btnAddPathLayer">
-          <property name="text">
-           <string>New Path Layer</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0" colspan="2">
-         <widget class="Line" name="line">
+        <item row="16" column="0">
+         <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
-        <item row="7" column="0" colspan="2">
+        <item row="16" column="1">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="16" column="2">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="16" column="3">
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="6" column="0" colspan="4">
          <widget class="Line" name="line1">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -181,28 +279,18 @@
           </property>
          </widget>
         </item>
-        <item row="13" column="1">
-         <widget class="QLineEdit" name="txtSpeed"/>
-        </item>
-        <item row="10" column="0" colspan="2">
-         <widget class="QPushButton" name="btnStartStopSimulation">
+        <item row="13" column="0" colspan="2">
+         <widget class="QLabel" name="lblSpeed">
           <property name="text">
-           <string>START</string>
+           <string>Speed</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item row="15" column="0" colspan="2">
-         <widget class="QPushButton" name="btnShowProperties">
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string>Show Property Dialog</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0" colspan="2">
-         <widget class="QComboBox" name="cmboVehicleSelect">
+        <item row="11" column="2" colspan="2">
+         <widget class="QLineEdit" name="txtSteeringAngle">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -211,18 +299,22 @@
           </property>
          </widget>
         </item>
-        <item row="14" column="0" colspan="2">
+        <item row="13" column="2" colspan="2">
+         <widget class="QLineEdit" name="txtSpeed">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="4">
          <widget class="Line" name="line_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
-        </item>
-        <item row="8" column="1">
-         <widget class="QLineEdit" name="txtSimulationId"/>
-        </item>
-        <item row="11" column="1">
-         <widget class="QLineEdit" name="txtSteeringAngle"/>
         </item>
        </layout>
       </widget>
