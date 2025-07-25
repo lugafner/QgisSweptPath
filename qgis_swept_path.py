@@ -206,7 +206,8 @@ class QgisSweptPath:
         Get the dict from the vehicle Factory
         Set up the combo box for vehicle selection
         """
-        self._vehicle_list = VehicleFactory.get_classes()
+        package_list: list[str] = self.prop.vehicle_packages.split(";")
+        self._vehicle_list = VehicleFactory.get_classes(package_list)
         for k, v in self._vehicle_list.items():
             self.dockwidget.cmboVehicleSelect.addItems([k])
 
@@ -423,7 +424,7 @@ class QgisSweptPath:
         selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
         vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
 
-        vehicle_module = __import__("QgisSweptPath.vehicles.{}".format(vehicle_item[1]), fromlist=[vehicle_item[0]])
+        vehicle_module = __import__(vehicle_item[1], fromlist=[vehicle_item[0]])
         vehicle_class = getattr(vehicle_module, vehicle_item[0])
         self.vehicle = vehicle_class()
 
