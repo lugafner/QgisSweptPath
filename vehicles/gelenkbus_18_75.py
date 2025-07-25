@@ -1,16 +1,18 @@
 
 # Vehicle Gelenkbus 18.75m (Hess Trolleybus)
 from ..vehicle import Vehicle
+from .gelenkbus_18_75_trailer import Gelenkbus1875Trailer
 import math
 
 class Gelenkbus1875(Vehicle):
+    vehicle_name = "Gelenkbus 18.75m"
+    is_main_vehicle = True
+
     def __init__(self):
         super().__init__()
 
         # Set up all needed parameters
-        self._vehicle_name = "Gelenkbus 18.75m"
         # Vehicle geometry based on template from canton of lucerne
-
         # Body
         self._body_length = 9.77  # meter
         self._body_width = 2.55  # meter
@@ -24,8 +26,7 @@ class Gelenkbus1875(Vehicle):
         self._max_steering_angle = 49.5 / 180 * math.pi  # In radians
 
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle = True  # solo bus
-        self._trailer = None  # solo bus
+        self.trailer = Gelenkbus1875Trailer()  # Trailer. Always use setter of property
         self._connection_point = 10.60  # meter from front
 
         # Vehicle type

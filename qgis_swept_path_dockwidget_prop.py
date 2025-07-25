@@ -29,7 +29,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._vehicle_layer_id: str = ""  # Layer id of vehicle layer
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
-        self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
+        self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (semicolon separated)
         self._speed_change_step: float = 0.03  # Steps to change speed in m/s per click (step based)
         self._steer_change_step: float = 0.10  # Radians per click (step based)
         self._steering_time: float = 6.0  # Time in seconds for full left to full right (frame based)
@@ -40,6 +40,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._key_steer_right: str = "L"  # Single key for steering right
         self._key_speed_up: str = "I"  # Single key for speed up
         self._key_speed_down: str = "K"  # Single key for speed down
+        self._vehicle_packages: str = ""  # String of additional directories with vehicle packages (semicolon separated)
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
@@ -63,7 +64,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_key_steer_left": "qgissweptpath/key_steer_left",
             "_key_steer_right": "qgissweptpath/key_steer_right",
             "_key_speed_up": "qgissweptpath/key_speed_up",
-            "_key_speed_down": "qgissweptpath/key_speed_down"
+            "_key_speed_down": "qgissweptpath/key_speed_down",
+            "_vehicle_packages": "qgissweptpath/vehicle_packages"
         }
 
         self._readProperties()  # Read the properties from QGIS project
@@ -106,6 +108,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propKeySpeedDown.textEdited.connect(self._change_key_speed_down)
         self.propFrameBasedSimulation.clicked.connect(self._clicked_frame_based_simulation)
         self.propStepBasedSimulation.clicked.connect(self._clicked_step_based_simulation)
+        self.propVehiclePackages.textEdited.connect(self._change_vehicle_packages)
 
 
     def _updateGUI(self):
@@ -132,6 +135,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propKeySteerRight.setText(self._key_steer_right)
         self.propKeySpeedUp.setText(self._key_speed_up)
         self.propKeySpeedDown.setText(self._key_speed_down)
+        self.propVehiclePackages.setText(self._vehicle_packages)
 
         if self._simulation_mode == SimulationMode.FRAME_BASED:
             self.propStepBasedSimulation.setChecked(False)
@@ -281,6 +285,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._simulation_mode = int(SimulationMode.STEP_BASED.value)
 
 
+    def _change_vehicle_packages(self):
+        self._vehicle_packages = str(self.propVehiclePackages.text())
+
+
     @property
     def frames(self) -> int:
         """Frames per seconds for simulation"""
@@ -339,7 +347,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def dissolve_fields(self) -> str:
         """
         String of fields to dissolve the paths by
-        Comma separated
+        Semicolon separated
         """
         return self._dissolve_fields
 
@@ -414,6 +422,12 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def key_steer_right(self) -> str:
         """Key steer right as string"""
         return self._key_steer_right
+
+
+    @property
+    def vehicle_packages(self) -> str:
+        """Semicolon separated string of vehicle package directories"""
+        return self._vehicle_packages
 
 
     # Setters

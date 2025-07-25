@@ -3,13 +3,14 @@
 from ..vehicle import Vehicle
 
 class Gelenkbus1875Trailer(Vehicle):
+    vehicle_name = "Gelenkbus 18.75m Trailer"
+    is_main_vehicle = False  # Trailer
+
     def __init__(self):
         super().__init__()
 
         # Set up all needed parameters
-        self._vehicle_name = "Gelenkbus 18.75m Trailer"
         # Vehicle geometry based on template from canton of lucerne
-
         # Body
         self._body_length = 7.32  # meter
         self._body_width = 2.55  # meter
@@ -23,8 +24,7 @@ class Gelenkbus1875Trailer(Vehicle):
         self._max_steering_angle = 0.0  # Not needed for trailer
 
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle = False  # Trailer
-        self._trailer = None  # No trailer
+        self.trailer = None  # No trailer
         self._connection_point = -0.83  # meter from front (negative = point is in front of vehicle)
 
         # Vehicle type

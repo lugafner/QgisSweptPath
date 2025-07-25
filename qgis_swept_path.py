@@ -29,25 +29,18 @@ from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLa
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
 from uuid import uuid4
 
-# Initialize Qt resources from file resources.py
-
 # Import the code for the DockWidget
 from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .simulator import Simulator
 from .qgis_swept_path_enum import SimulationMode
+from .vehicle_factory import VehicleFactory
 import os.path
 
 # Import SweptPath code
-
 from .vehicle import Vehicle
-from .vehicles.mercedes_citaro import MercedesCitaro
-from .vehicles.mercedes_citaro_g import MercedesCitaroG
-from .vehicles.mercedes_citaro_g_trailer import MercedesCitaroGTrailer
-from .vehicles.gelenkbus_18_75 import Gelenkbus1875
-from .vehicles.gelenkbus_18_75_trailer import Gelenkbus1875Trailer
 
-from .coord import CartesianCoord, CoordUtils
+from .coord import CoordUtils
 from .vehicle_placer import VehiclePlacer
 from .path_points import PathPoints
 
@@ -80,6 +73,8 @@ class QgisSweptPath:
         self._simulation_id: str = ""  # Simulation ID for layer features identification
         self.vehicle: Vehicle = None  # The vehicle to simulate
         self._path_points: list[PathPoints] = []  # Stores all the path points during simulation
+
+        self._vehicle_list: dict[str, tuple[str, str]] = {}
 
         # Controls the printing iteration
         self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
@@ -118,11 +113,13 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
             self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
+            self.dockwidget.btnReloadVehicleList.clicked.connect(self.setupVehicleList)
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
             self.simulator.storePath.connect(self._store_path_points)
 
             self.setupLayers()
+            self.setupVehicleList()
 
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -203,6 +200,23 @@ class QgisSweptPath:
                 )
             else:
                 self._path_layer = path_layer
+
+
+    def setupVehicleList(self):
+        """
+        Get the dict from the vehicle Factory
+        Set up the combo box for vehicle selection
+        """
+        # Get package list from properties and get classes with vehicle factory
+        package_list: list[str] = self.prop.vehicle_packages.split(";")
+        self._vehicle_list = VehicleFactory.get_classes(package_list)
+
+        # Remove all existing items
+        self.dockwidget.cmboVehicleSelect.clear()
+
+        # Add all Vehicles from vehicle list
+        for vehicle_name, _ in self._vehicle_list.items():
+            self.dockwidget.cmboVehicleSelect.addItem(vehicle_name)
 
 
     def setup_path_points(self):
@@ -414,10 +428,12 @@ class QgisSweptPath:
 
 
     def _setup_vehicle(self):
-        # TODO: Add a vehicle factory
-        trailer = Gelenkbus1875Trailer()
-        self.vehicle = MercedesCitaro()
-        #  self.vehicle.trailer = trailer
+        selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
+        vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
+
+        vehicle_module = __import__(vehicle_item[1], fromlist=[vehicle_item[0]])
+        vehicle_class = getattr(vehicle_module, vehicle_item[0])
+        self.vehicle = vehicle_class()
 
 
     def _place_vehicle(self):

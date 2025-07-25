@@ -2,15 +2,21 @@ import math
 import inspect
 
 from pathlib import Path
+from typing import Optional
 
 from .coord import PolarCoord, CartesianCoord, CoordUtils
 
 
 class Vehicle:
+    vehicle_name: str = "Vehicle"
+    """Name of vehicle. Will be shown in combo box for vehicle selection"""
+    is_main_vehicle: bool = False
+    """Set as main vehicle or just as trailer part. Only main vehicles are shown for vehicle selection"""
+
+
     def __init__(self):
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
-        self._vehicle_name: str = "Vehicle"
         # Body
         self._body_length: float = 15.00  # meter
         self._body_width: float = 2.50  # meter
@@ -22,8 +28,8 @@ class Vehicle:
         self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Vehicle = None  # Init with None for standard vehicle
+        self._trailer: Optional[Vehicle] = None
+        """Create trailer object here, if the vehicle has a trailer. Set to None, if the vehicle has no trailer"""
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
         
@@ -33,7 +39,7 @@ class Vehicle:
         self._has_rear_axle: bool = True  # When false, no rear axle will be drawn
 
         # Graphics
-        self._symbol: str = "./vehicles/vehicle.svg"
+        self._symbol: str = ""  # Path to svg symbol relative to this file. Empty for generic vehicle
         self._symbol_size_x: float = 15.0 # SVG symbol size x in QGIS style units (usually meters)
         self._symbol_size_y: float = 2.5  # SVG symbol size y in QGIS style units (usually meters)
         # Offset to Place the symbol. Base point is point F.
@@ -108,7 +114,7 @@ class Vehicle:
         Updates the vehicle parts list when the vehicle is a main vehicle
         Method is only called when creating the vehicle and when a trailer is added
         """    
-        if self._is_main_vehicle:
+        if self.is_main_vehicle:
             self._vehicle_parts = [self]
             child_vehicle = self._trailer
             while child_vehicle is not None:
@@ -205,14 +211,6 @@ class Vehicle:
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
-    # Not used since rear wheel path is calculated on straight segments
-    # Function kept for later use when simulating rear wheel steering
-    def _get_driving_vector_rear(self) -> PolarCoord:
-        center_angle = self._get_center_angle()
-        outer_angle = (math.pi  - center_angle) / 2
-        driving_vector_angle = (math.pi / 2) - outer_angle
-        driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
-        return PolarCoord(driving_vector_distance, driving_vector_angle)
 
     def _drive(self, distance: float):
         """
@@ -232,7 +230,7 @@ class Vehicle:
 
         # Simulate trailer
         if self._trailer:
-            self._trailer.step_trailer(self._global_cp, self._trailer_angle)
+            self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
 
 
     def step(self, distance: float):
@@ -501,23 +499,9 @@ class Vehicle:
         return self._has_rear_axle
 
     @property
-    def is_main_vehicle(self) -> bool:
-        """
-        Returns true, if the vehicle is the main vehicle
-        The main vehicle is the driven vehicle. This vehicle could tow a trailer
-        """
-        return self._is_main_vehicle
-
-    @property
     def is_placed(self) -> bool:
         """
         Returns true, if the vehicle is placed
         """
         return self._vehicle_is_placed
 
-    @property
-    def vehicle_name(self) -> str:
-        """
-        Returns the vehicle name
-        """
-        return self._vehicle_name

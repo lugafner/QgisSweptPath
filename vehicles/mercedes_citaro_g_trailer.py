@@ -3,12 +3,13 @@
 from ..vehicle import Vehicle
 
 class MercedesCitaroGTrailer(Vehicle):
+    vehicle_name = "Mercedes Citaro G Trailer"
+    is_main_vehicle = False  # Trailer
+
     def __init__(self):
         super().__init__()
 
         # Set up all needed parameters
-        self._vehicle_name = "Mercedes Citaro G Trailer"
-
         # Body
         self._body_length = 6.809  # meter
         self._body_width = 2.550  # meter
@@ -22,8 +23,7 @@ class MercedesCitaroGTrailer(Vehicle):
         self._max_steering_angle = 0.0  # Not needed for trailer
 
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle = False  # Trailer
-        self._trailer = None  # No trailer
+        self.trailer = None  # No trailer
         self._connection_point = -0.786  # meter from front (negative = point is in front of vehicle)
 
         # Vehicle type
