@@ -3,6 +3,7 @@ import os
 from typing import override
 
 from qgis.PyQt import uic
+from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.core import QgsSettings
 
@@ -13,6 +14,10 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qgis_swept_path_dockwidget_prop.ui'))
 
 class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
+    # Signals
+    vehicleLayerChanged: pyqtSignal = pyqtSignal(name="VehicleLayerChanged")
+    pathLayerChanged: pyqtSignal = pyqtSignal(name="PathLayerChanged")
+
     def __init__(self, parent=None):
         """Constructor."""
         super(QgisSweptPathDockWidgetProp, self).__init__(parent)
@@ -68,6 +73,11 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_vehicle_packages": "qgissweptpath/vehicle_packages"
         }
 
+        # Fields to store the information, if the layer ids were changed
+        # If the layer ids were changed, the signals are emitted on close
+        self._vehicle_layer_changed: bool = False
+        self._path_layer_changed: bool = False
+
         self._readProperties()  # Read the properties from QGIS project
         self._initGUI()  # Sets up slots
 
@@ -75,6 +85,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     @override
     def closeEvent(self, event):
         self._write_properties()
+
+        # Check if the layers are changed and emit the signal
+        if self._vehicle_layer_changed:
+            self._vehicle_layer_changed = False
+            self.vehicleLayerChanged.emit()
+        if self._path_layer_changed:
+            self._path_layer_changed = False
+            self.pathLayerChanged.emit()
+
         event.accept()
 
 
@@ -109,6 +128,12 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propFrameBasedSimulation.clicked.connect(self._clicked_frame_based_simulation)
         self.propStepBasedSimulation.clicked.connect(self._clicked_step_based_simulation)
         self.propVehiclePackages.textEdited.connect(self._change_vehicle_packages)
+        self.propVehicleLayerId.textEdited.connect(self._change_vehicle_layer_id)
+        self.propPathLayerId.textEdited.connect(self._change_path_layer_id)
+
+        # Layer id editing check boxes (no properties to be saved)
+        self.chbEditVehicleLayer.clicked.connect(self._clicked_edit_vehicle_layer)
+        self.chbEditPathLayer.clicked.connect(self._clicked_edit_path_layer)
 
 
     def _updateGUI(self):
@@ -287,6 +312,30 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
     def _change_vehicle_packages(self):
         self._vehicle_packages = str(self.propVehiclePackages.text())
+
+
+    def _change_path_layer_id(self):
+        self._path_layer_id = str(self.propPathLayerId.text())
+
+
+    def _change_vehicle_layer_id(self):
+        self._vehicle_layer_id = str(self.propVehicleLayerId.text())
+
+
+    def _clicked_edit_path_layer(self):
+        self._path_layer_changed = True
+        if self.chbEditPathLayer.isChecked():
+            self.propPathLayerId.setReadOnly(True)
+        else:
+            self.propPathLayerId.setReadOnly(False)
+
+
+    def _clicked_edit_vehicle_layer(self):
+        self._vehicle_layer_changed = True
+        if self.chbEditVehicleLayer.isChecked():
+            self.propVehicleLayerId.setReadOnly(True)
+        else:
+            self.propVehicleLayerId.setReadOnly(False)
 
 
     @property
