@@ -31,13 +31,13 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qgis_swept_path_dockwidget_base.ui'))
 
 
-class QgisSweptPathDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
+class QgisSweptPathDockWidgetBase(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
     def __init__(self, parent=None):
         """Constructor."""
-        super(QgisSweptPathDockWidget, self).__init__(parent)
+        super(QgisSweptPathDockWidgetBase, self).__init__(parent)
         self.setupUi(self)
 
     def closeEvent(self, event):
