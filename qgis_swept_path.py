@@ -25,7 +25,7 @@
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter
+from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter, QgsRectangle
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
 from uuid import uuid4
 
@@ -33,7 +33,7 @@ from uuid import uuid4
 from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .simulator import Simulator
-from .qgis_swept_path_enum import SimulationMode
+from .qgis_swept_path_enum import SimulationMode, BorderDistanceUnits
 from .vehicle_factory import VehicleFactory
 import os.path
 
@@ -83,6 +83,10 @@ class QgisSweptPath:
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
         self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
+        # Map units per pixel. Used for automatic map movement. 1 = no transformation from map units
+        self._units_p_pixel: float = 1
+        # Map canvas extent. Used for automatic map movement.
+        self._map_extent: QgsRectangle = self.canvas.extent()
 
 
     def run(self):
@@ -407,6 +411,8 @@ class QgisSweptPath:
         self.simulator.stopSimulation()
         if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
             self.canvas.removeEventFilter(self.simulator)
+        if self.prop.auto_map_movement:
+            self.canvas.extentsChanged.disconnect(self._update_map_extent)
 
         self.dockwidget.btnShowProperties.setEnabled(True)
 
@@ -437,6 +443,8 @@ class QgisSweptPath:
             self.simulator.properties = self.prop
             if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
                 self.canvas.installEventFilter(self.simulator)
+            if self.prop.auto_map_movement:
+                self.canvas.extentsChanged.connect(self._update_map_extent)
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)
 
@@ -495,9 +503,13 @@ class QgisSweptPath:
                 f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
                 self._vehicle_layer.dataProvider().addFeatures([f])
 
+            if self.prop.auto_map_movement and self._vehicle_reached_edge():
+                self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
+
             self._vehicle_layer.triggerRepaint()
-            self.update_speed()
-            self.update_steering()
+
+        self.update_speed()
+        self.update_steering()
 
 
     def _create_vehicle_drawing(self):
@@ -692,6 +704,27 @@ class QgisSweptPath:
         if self.dockwidget.chbPathLayer.isChecked():
             self.dockwidget.chbPathLayer.setChecked(False)
             self.setupPathLayer()
+
+
+    def _update_map_extent(self):
+        self._map_extent = self.canvas.extent()
+        if self.prop.border_distance_units == BorderDistanceUnits.MAP_UNITS:
+            self._units_p_pixel = 1
+        elif self.prop.border_distance_units == BorderDistanceUnits.PIXELS:
+            self._units_p_pixel = self.canvas.mapUnitsPerPixel()
+
+
+    def _vehicle_reached_edge(self):
+        if (self._map_extent.xMaximum() - self.vehicle.f.x) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self.vehicle.f.x - self._map_extent.xMinimum()) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self._map_extent.yMaximum() - self.vehicle.f.y) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self.vehicle.f.y - self._map_extent.yMinimum()) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        # If the vehicle is not outside bounds return false
+        return False
 
 
     def _show_properties(self):
