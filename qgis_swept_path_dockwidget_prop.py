@@ -7,7 +7,7 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.core import QgsSettings
 
-from .qgis_swept_path_enum import SimulationMode
+from .qgis_swept_path_enum import SimulationMode, BorderDistanceUnits
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -46,6 +46,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._key_speed_up: str = "I"  # Single key for speed up
         self._key_speed_down: str = "K"  # Single key for speed down
         self._vehicle_packages: str = ""  # String of additional directories with vehicle packages (semicolon separated)
+        self._border_distance_units: int = BorderDistanceUnits.MAP_UNITS.value  # Integer representation of distance units
+        self._auto_map_movement: bool = True  # Automatic map movement
+        self._border_distance: float = 10.0  # Minimal distance from border for automatic map movement (Units see above)
+
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
@@ -70,7 +74,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             "_key_steer_right": "qgissweptpath/key_steer_right",
             "_key_speed_up": "qgissweptpath/key_speed_up",
             "_key_speed_down": "qgissweptpath/key_speed_down",
-            "_vehicle_packages": "qgissweptpath/vehicle_packages"
+            "_vehicle_packages": "qgissweptpath/vehicle_packages",
+            "_border_distance_units": "qgissweptpath/border_distance_units",
+            "_auto_map_movement": "qgissweptpath/auto_map_movement",
+            "_border_distance": "qgissweptpath/border_distance"
         }
 
         # Fields to store the information, if the layer ids were changed
@@ -130,6 +137,10 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propVehiclePackages.textEdited.connect(self._change_vehicle_packages)
         self.propVehicleLayerId.textEdited.connect(self._change_vehicle_layer_id)
         self.propPathLayerId.textEdited.connect(self._change_path_layer_id)
+        self.propBorderDistance.valueChanged.connect(self._change_border_distance)
+        self.propAutoMapMovement.stateChanged.connect(self._change_auto_map_movement)
+        self.propDistanceMapUnits.clicked.connect(self._clicked_distance_map_units)
+        self.propDistancePixels.clicked.connect(self._clicked_distance_pixels)
 
         # Layer id editing check boxes (no properties to be saved)
         self.chbEditVehicleLayer.clicked.connect(self._clicked_edit_vehicle_layer)
@@ -161,6 +172,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propKeySpeedUp.setText(self._key_speed_up)
         self.propKeySpeedDown.setText(self._key_speed_down)
         self.propVehiclePackages.setText(self._vehicle_packages)
+        self.propBorderDistance.setValue(self._border_distance)
+        self.propAutoMapMovement.setChecked(self._auto_map_movement)
 
         if self._simulation_mode == SimulationMode.FRAME_BASED:
             self.propStepBasedSimulation.setChecked(False)
@@ -170,6 +183,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
             self.propStepBasedSimulation.setChecked(True)
         else:
             raise Exception("Unknown property for simulation mode")
+
+        if self._border_distance_units == BorderDistanceUnits.MAP_UNITS:
+            self.propDistancePixels.setChecked(False)
+            self.propDistanceMapUnits.setChecked(True)
+        elif self._border_distance_units == BorderDistanceUnits.PIXELS:
+            self.propDistanceMapUnits.setChecked(False)
+            self.propDistancePixels.setChecked(True)
+        else:
+            raise Exception("Unknown property for border distance units")
 
 
     def _readProperties(self):
@@ -320,6 +342,24 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
     def _change_vehicle_layer_id(self):
         self._vehicle_layer_id = str(self.propVehicleLayerId.text())
+
+
+    def _change_border_distance(self):
+        self._border_distance = float(self.propBorderDistance.value())
+
+
+    def _change_auto_map_movement(self):
+        self._auto_map_movement = bool(self.propAutoMapMovement.isChecked())
+
+
+    def _clicked_distance_map_units(self):
+        self.propDistancePixels.setChecked(False)
+        self._border_distance_units = int(BorderDistanceUnits.MAP_UNITS.value)
+
+
+    def _clicked_distance_pixels(self):
+        self.propDistanceMapUnits.setChecked(False)
+        self._border_distance_units = int(BorderDistanceUnits.PIXELS.value)
 
 
     def _clicked_edit_path_layer(self):
@@ -477,6 +517,24 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def vehicle_packages(self) -> str:
         """Semicolon separated string of vehicle package directories"""
         return self._vehicle_packages
+
+
+    @property
+    def border_distance_units(self) -> BorderDistanceUnits:
+        """Border Distance Units"""
+        return self._border_distance_units
+
+
+    @property
+    def auto_map_movement(self) -> bool:
+        """True if the automatic map movement is on"""
+        return self._auto_map_movement
+
+
+    @property
+    def border_distance(self) -> float:
+        """Minimal distance from border for automatic map movement"""
+        return self._border_distance
 
 
     # Setters
