@@ -32,17 +32,23 @@ class VehicleFactory:
         # List of all vehicle modules
         modules = []
         # Get all default vehicle modules from the vehicles folder in plugin directory
-        for _, n, _ in pkgutil.iter_modules([default_vehicles]):
-            modules.append(import_module(".{}".format(n), "QgisSweptPath.vehicles"))
+        try:
+            for _, n, _ in pkgutil.iter_modules([default_vehicles]):
+                modules.append(import_module(".{}".format(n), "QgisSweptPath.vehicles"))
+        except ImportError as e:
+            raise ImportError("Default vehicle package not available or damaged. Try to reinstall the plugin") from e
 
         # Loop over each location in package list
         for pkg in pkg_list:
             sys.path.append(pkg)  # Add directory to sys path
             package_name = basename(normpath(pkg))  # Get basename as package name
-
-            # Get all vehicle modules in specified package directories with basename as package name
-            for _, name, _ in pkgutil.iter_modules([pkg]):
-                modules.append(import_module(".{}".format(name), package_name))
+            try:
+                    # Get all vehicle modules in specified package directories with basename as package name
+                    for _, name, _ in pkgutil.iter_modules([pkg]):
+                        modules.append(import_module(".{}".format(name), package_name))
+            except ImportError as e:
+                # TODO: Print warning message
+                pass
 
         # Loop over all modules in module list
         for module in modules:
