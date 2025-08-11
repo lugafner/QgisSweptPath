@@ -2,11 +2,12 @@ import pkgutil, inspect
 from importlib import import_module
 from os.path import dirname, join, normpath, basename
 import sys
+from typing import Optional
 
 
 class VehicleFactory:
     @staticmethod
-    def get_classes(pkg_list: list[str] = []) -> dict[str, tuple[str, str]]:
+    def get_classes(pkg_list: list[str] = []) -> (dict[str, tuple[str, str]], str):
         """
         Get a dictionary of all main vehicle classes
         The structure is as follows:
@@ -22,6 +23,7 @@ class VehicleFactory:
         """
 
         class_dict: dict[str, tuple[str, str]] = {}
+        error: list[str] = []
 
         # path to the vehicle subpackage (default vehicle package)
         # Remove from package list if present to avoid double import
@@ -46,9 +48,8 @@ class VehicleFactory:
                     # Get all vehicle modules in specified package directories with basename as package name
                     for _, name, _ in pkgutil.iter_modules([pkg]):
                         modules.append(import_module(".{}".format(name), package_name))
-            except ImportError as e:
-                # TODO: Print warning message
-                pass
+            except ImportError:
+                error.append(pkg)
 
         # Loop over all modules in module list
         for module in modules:
@@ -59,4 +60,4 @@ class VehicleFactory:
                     # Add the infos to the dict
                     class_dict[cls.vehicle_name] = (cls.__name__, module.__name__)
 
-        return class_dict
+        return class_dict, error

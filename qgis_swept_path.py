@@ -237,7 +237,14 @@ class QgisSweptPath:
         package_list: list[str] = []
         if self.prop.vehicle_packages is not None and len(self.prop.vehicle_packages.strip()) >= 1:
             package_list = self.prop.vehicle_packages.split(";")
-        self._vehicle_list = VehicleFactory.get_classes(package_list)
+        self._vehicle_list, errors = VehicleFactory.get_classes(package_list)
+
+        for err in errors:
+            self.iface.messageBar().pushMessage(
+                "Vehicles not loaded",
+                "The vehicles could not be loaded from {}".format(err),
+                level=Qgis.Critical
+            )
 
         # Remove all existing items
         self.dockwidget.cmboVehicleSelect.clear()
