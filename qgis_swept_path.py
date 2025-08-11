@@ -469,6 +469,7 @@ class QgisSweptPath:
 
     def _setup_vehicle(self):
         self.dockwidget.chbCreateVehicle.setChecked(False)
+        self._vehicle_features.clear()
         selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
         vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
 
