@@ -2,11 +2,12 @@ import pkgutil, inspect
 from importlib import import_module
 from os.path import dirname, join, normpath, basename
 import sys
+from typing import Optional
 
 
 class VehicleFactory:
     @staticmethod
-    def get_classes(pkg_list: list[str] = []) -> dict[str, tuple[str, str]]:
+    def get_classes(pkg_list: list[str] = []) -> (dict[str, tuple[str, str]], str):
         """
         Get a dictionary of all main vehicle classes
         The structure is as follows:
@@ -22,6 +23,7 @@ class VehicleFactory:
         """
 
         class_dict: dict[str, tuple[str, str]] = {}
+        error: list[str] = []
 
         # path to the vehicle subpackage (default vehicle package)
         # Remove from package list if present to avoid double import
@@ -32,17 +34,22 @@ class VehicleFactory:
         # List of all vehicle modules
         modules = []
         # Get all default vehicle modules from the vehicles folder in plugin directory
-        for _, n, _ in pkgutil.iter_modules([default_vehicles]):
-            modules.append(import_module(".{}".format(n), "QgisSweptPath.vehicles"))
+        try:
+            for _, n, _ in pkgutil.iter_modules([default_vehicles]):
+                modules.append(import_module(".{}".format(n), "QgisSweptPath.vehicles"))
+        except ImportError as e:
+            raise ImportError("Default vehicle package not available or damaged. Try to reinstall the plugin") from e
 
         # Loop over each location in package list
         for pkg in pkg_list:
             sys.path.append(pkg)  # Add directory to sys path
             package_name = basename(normpath(pkg))  # Get basename as package name
-
-            # Get all vehicle modules in specified package directories with basename as package name
-            for _, name, _ in pkgutil.iter_modules([pkg]):
-                modules.append(import_module(".{}".format(name), package_name))
+            try:
+                    # Get all vehicle modules in specified package directories with basename as package name
+                    for _, name, _ in pkgutil.iter_modules([pkg]):
+                        modules.append(import_module(".{}".format(name), package_name))
+            except ImportError:
+                error.append(pkg)
 
         # Loop over all modules in module list
         for module in modules:
@@ -53,4 +60,4 @@ class VehicleFactory:
                     # Add the infos to the dict
                     class_dict[cls.vehicle_name] = (cls.__name__, module.__name__)
 
-        return class_dict
+        return class_dict, error
