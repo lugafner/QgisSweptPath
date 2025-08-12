@@ -505,7 +505,6 @@ class QgisSweptPath:
         self.canvas.unsetMapTool(self._vehicle_placer)
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
-        self._draw_vehicle()
         self.dockwidget.chbPlaceVehicle.setChecked(True)
 
 
