@@ -122,6 +122,7 @@ class QgisSweptPath:
             self.dockwidget.chbPlaceVehicle.clicked.connect(self._check_place_vehicle)
             self.dockwidget.chbVehicleLayer.clicked.connect(self._check_create_vehicle_layer)
             self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
+            self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
@@ -186,7 +187,7 @@ class QgisSweptPath:
 
 
     def setupVehicleLayer(self):
-        # Vehicle layer
+        # Create vehicle layer
         if self.prop.vehicle_layer_id is "":
             # Create new layer if there is no id stored in the project
             self._create_vehicle_layer()
@@ -466,6 +467,10 @@ class QgisSweptPath:
                 level=Qgis.Critical
             )
 
+    def _reset_vehicle(self):
+        # Uncheck vehicle status and delete vehicle
+        self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.vehicle = None
 
     def _setup_vehicle(self):
         self.dockwidget.chbCreateVehicle.setChecked(False)
