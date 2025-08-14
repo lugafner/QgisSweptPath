@@ -455,6 +455,7 @@ class QgisSweptPath:
                 self.canvas.installEventFilter(self.simulator)
             if self.prop.auto_map_movement:
                 self.canvas.extentsChanged.connect(self._update_map_extent)
+                self._update_map_extent()
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)
 
