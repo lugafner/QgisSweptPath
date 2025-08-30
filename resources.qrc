@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/qgis_swept_path" >
+    <qresource prefix="/plugins/qgis_swept_path">
         <file>icon.png</file>
     </qresource>
 </RCC>

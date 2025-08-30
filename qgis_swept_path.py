@@ -43,6 +43,7 @@ from .vehicle import Vehicle
 from .coord import CoordUtils
 from .vehicle_placer import VehiclePlacer
 from .path_points import PathPoints
+from .resources import *
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -284,6 +285,7 @@ class QgisSweptPath:
             callback=self.run,
             icon_path=icon_path,
             enabled_flag=True,
+            add_to_toolbar=True,
             add_to_menu=True,
             parent=self.iface.mainWindow())
 
