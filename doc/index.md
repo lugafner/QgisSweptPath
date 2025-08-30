@@ -1,6 +1,6 @@
 # QgisSweptPath
 
-[License]()
+[![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](../LICENSE)
 
 QgisSweptPath is a plug-in for the open source GIS software QGIS for simple sweep curve checks.
 The plug-in is primarily suitable for rough feasibility studies and does not claim to achieve the accuracy and depth of analysis
@@ -29,8 +29,6 @@ Für die Entwickler von QgisSweptPath, Lukas Gafner
 
 ---
 
-User manual English (coming soon)
-
-Benutzerhandbuch Deutsch [->](qgissweptpath_de.md)
-
-Developer guide (coming soon)
+[![Static Badge](https://img.shields.io/badge/Benutzerhandbuch-DE-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](qgissweptpath_de.md)
+![Static Badge](https://img.shields.io/badge/User%20manual-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)
+![Static Badge](https://img.shields.io/badge/Developer%20guide-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)
