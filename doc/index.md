@@ -16,7 +16,7 @@ For the developers of QgisSweptPath, Lukas Gafner
 ---
 
 QgisSweptPath ist ein Plug-in für die Open-Source-GIS-Software QGIS für einfache Schleppkurvenprüfungen.
-Das Plug-n ist vor allem für grobe Machbarkeitsabklärungen geeignet und hat nicht den Anspruch die Genauigkeit und Abklärungstiefe
+Das Plug-in ist vor allem für grobe Machbarkeitsabklärungen geeignet und hat nicht den Anspruch die Genauigkeit und Abklärungstiefe
 von professionellen Schleppkurvensimulationsprogrammen für CAD-Systeme zu erreichen.
 
 Bei der Entwicklung des Plug-ins wird darauf geachtet, dass die Schleppkurven möglichst den realen Fahrzeugen entsprechen
