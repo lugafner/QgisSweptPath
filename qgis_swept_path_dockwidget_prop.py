@@ -35,8 +35,8 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
         self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (semicolon separated)
-        self._speed_change_step: float = 0.03  # Steps to change speed in m/s per click (step based)
-        self._steer_change_step: float = 0.10  # Radians per click (step based)
+        self._speed_change_step: float = 0.05  # Steps to change speed in m/s per click (step based)
+        self._steer_change_step: float = 0.008  # Radians per click (step based)
         self._steering_time: float = 6.0  # Time in seconds for full left to full right (frame based)
         self._acceleration: float = 2.5  # Acceleration and deceleration in m/s2 (frame based)
         self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops

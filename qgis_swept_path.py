@@ -123,6 +123,7 @@ class QgisSweptPath:
             self.dockwidget.chbVehicleLayer.clicked.connect(self._check_create_vehicle_layer)
             self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
             self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
+            self.dockwidget.btnPauseResumeSimulation.clicked.connect(self._pause_resume_simulation)
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
@@ -173,6 +174,11 @@ class QgisSweptPath:
                         add_to_menu=True,
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+U")
+        self.add_action("Pause/Resume simulation",
+                        self._pause_resume_simulation,
+                        add_to_menu=True,
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+O")
 
     def setupLayers(self):
         """
@@ -417,14 +423,18 @@ class QgisSweptPath:
 
 
     def stopSimulation(self):
-        self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
+
         if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
             self.canvas.removeEventFilter(self.simulator)
         if self.prop.auto_map_movement:
             self.canvas.extentsChanged.disconnect(self._update_map_extent)
 
+        # Update buttons text and status
+        self.dockwidget.btnStartStopSimulation.setText("START")
         self.dockwidget.btnShowProperties.setEnabled(True)
+        self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
+        self.dockwidget.btnPauseResumeSimulation.setEnabled(False)
 
         self._write_path_to_layer()
 
@@ -440,6 +450,11 @@ class QgisSweptPath:
 
         # The vehicle must first be created manually and be placed
         if self.vehicle is not None and self.vehicle.is_placed:
+            # Update buttons text and status
+            self.dockwidget.btnStartStopSimulation.setText("STOP")
+            self.dockwidget.btnShowProperties.setEnabled(False)
+            self.dockwidget.btnPauseResumeSimulation.setEnabled(True)
+
             # Checks if print path is set to true
             if self.prop.print_path:
                 self.setup_path_points()
@@ -459,14 +474,21 @@ class QgisSweptPath:
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)
 
-            self.dockwidget.btnStartStopSimulation.setText("STOP")
-            self.dockwidget.btnShowProperties.setEnabled(False)
         else:
             self.iface.messageBar().pushMessage(
                 "Can't start simulation",
                 "The vehicle must first be created and placed",
                 level=Qgis.Critical
             )
+
+
+    def _pause_resume_simulation(self):
+        if self.simulator.pauseResumeSimulation():
+            self.dockwidget.btnPauseResumeSimulation.setText("RESUME")
+        else:
+            self.canvas.setFocus(Qt.OtherFocusReason)
+            self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
+
 
     def _reset_vehicle(self):
         # Uncheck vehicle status and delete vehicle
@@ -510,18 +532,17 @@ class QgisSweptPath:
 
 
     def _draw_vehicle(self):
-        if not self.canvas.isDrawing():
-            self._vehicle_layer.dataProvider().truncate()
-            for v, f in self._vehicle_features.items():
-                f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
-                f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
-                f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
-                self._vehicle_layer.dataProvider().addFeatures([f])
+        self._vehicle_layer.dataProvider().truncate()
+        for v, f in self._vehicle_features.items():
+            f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+            f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
+            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+            self._vehicle_layer.dataProvider().addFeatures([f])
 
-            if self.prop.auto_map_movement and self._vehicle_reached_edge():
-                self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
+        if self.prop.auto_map_movement and self._vehicle_reached_edge():
+            self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
 
-            self._vehicle_layer.triggerRepaint()
+        self._vehicle_layer.triggerRepaint()
 
         self.update_speed()
         self.update_steering()
