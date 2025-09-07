@@ -5,6 +5,7 @@ from threading import Thread
 from typing import Optional
 
 from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
+from qgis.gui import QgsMapCanvas
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
 
@@ -18,9 +19,10 @@ class Simulator(QObject):
     drawVehicle: pyqtSignal = pyqtSignal(name="drawVehicle")
     storePath: pyqtSignal = pyqtSignal(name="storePath")
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, canvas: QgsMapCanvas):
         """Constructor"""
-        super().__init__(parent)
+        super().__init__(canvas)
+        self._canvas = canvas
 
         self._vehicle: Vehicle = None
         self._prop: QgisSweptPathDockWidgetProp = None
@@ -133,6 +135,9 @@ class Simulator(QObject):
 
 
     def _simulate_frame(self):
+        if self._canvas.isDrawing():
+            return
+
         if self._speed_up:
             self._vehicle.speed_up(self._time_between_steps * self._prop.acceleration)
 
@@ -159,7 +164,7 @@ class Simulator(QObject):
 
     def _simulate_step(self):
         while self._simulation_running:
-            if self._vehicle.speed > self._prop.minimum_speed:
+            if self._vehicle.speed > self._prop.minimum_speed and not self._canvas.isDrawing():
                 self._vehicle.step(self._prop.step_distance)
 
                 self._step_counter += 1
