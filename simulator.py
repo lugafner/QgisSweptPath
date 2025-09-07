@@ -28,6 +28,7 @@ class Simulator(QObject):
         self._prop: QgisSweptPathDockWidgetProp = None
 
         self._simulation_running: bool = False
+        self._simulation_paused: bool = False
         self._simulation_timer: QTimer = QTimer(self)
         self._simulation_timer.timeout.connect(self._simulate_frame)
 
@@ -109,9 +110,15 @@ class Simulator(QObject):
             self._simulation_timer.stop()
 
         self._simulation_running = False
+        self._simulation_paused = False
 
         self.drawVehicle.emit()
         self.storePath.emit()
+
+
+    def pauseResumeSimulation(self) -> bool:
+        self._simulation_paused = not self._simulation_paused
+        return self._simulation_paused
 
 
     def speedUp(self):
@@ -135,7 +142,8 @@ class Simulator(QObject):
 
 
     def _simulate_frame(self):
-        if self._canvas.isDrawing():
+        if self._simulation_paused or self._canvas.isDrawing():
+            # Skip simulation if simulation is paused or canvas is drawing
             return
 
         if self._speed_up:
@@ -164,7 +172,11 @@ class Simulator(QObject):
 
     def _simulate_step(self):
         while self._simulation_running:
-            if self._vehicle.speed > self._prop.minimum_speed and not self._canvas.isDrawing():
+            if self._simulation_paused or self._canvas.isDrawing():
+                # Skip simulation if simulation is paused or canvas is drawing
+                continue
+
+            if self._vehicle.speed > self._prop.minimum_speed:
                 self._vehicle.step(self._prop.step_distance)
 
                 self._step_counter += 1
@@ -179,6 +191,11 @@ class Simulator(QObject):
     @property
     def simulation_running(self) -> bool:
         return self._simulation_running
+
+
+    @property
+    def simulation_paused(self) -> bool:
+        return self._simulation_paused
 
 
     @property
