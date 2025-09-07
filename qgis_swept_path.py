@@ -510,18 +510,17 @@ class QgisSweptPath:
 
 
     def _draw_vehicle(self):
-        if not self.canvas.isDrawing():
-            self._vehicle_layer.dataProvider().truncate()
-            for v, f in self._vehicle_features.items():
-                f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
-                f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
-                f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
-                self._vehicle_layer.dataProvider().addFeatures([f])
+        self._vehicle_layer.dataProvider().truncate()
+        for v, f in self._vehicle_features.items():
+            f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+            f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
+            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+            self._vehicle_layer.dataProvider().addFeatures([f])
 
-            if self.prop.auto_map_movement and self._vehicle_reached_edge():
-                self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
+        if self.prop.auto_map_movement and self._vehicle_reached_edge():
+            self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
 
-            self._vehicle_layer.triggerRepaint()
+        self._vehicle_layer.triggerRepaint()
 
         self.update_speed()
         self.update_steering()
