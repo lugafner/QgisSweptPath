@@ -76,9 +76,6 @@ class QgisSweptPath:
 
         self._vehicle_list: dict[str, tuple[str, str]] = {}
 
-        # Controls the printing iteration
-        self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
-
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
         self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
@@ -127,7 +124,7 @@ class QgisSweptPath:
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
-            self.simulator.storePath.connect(self._store_path_points)
+            # self.simulator.storePath will be connected on start simulation only if print path is set to true
 
             # Signals from properties
             self.prop.vehicleLayerChanged.connect(self.setupVehicleLayer)
@@ -429,6 +426,9 @@ class QgisSweptPath:
             self.canvas.removeEventFilter(self.simulator)
         if self.prop.auto_map_movement:
             self.canvas.extentsChanged.disconnect(self._update_map_extent)
+        if self.prop.print_path:
+            self.simulator.storePath.disconnect(self._store_path_points)
+            self._write_path_to_layer()
 
         # Update buttons text and status
         self.dockwidget.btnStartStopSimulation.setText("START")
@@ -436,7 +436,6 @@ class QgisSweptPath:
         self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
         self.dockwidget.btnPauseResumeSimulation.setEnabled(False)
 
-        self._write_path_to_layer()
 
 
     def startSimulation(self):
@@ -458,6 +457,7 @@ class QgisSweptPath:
             # Checks if print path is set to true
             if self.prop.print_path:
                 self.setup_path_points()
+                self.simulator.storePath.connect(self._store_path_points)
 
             # Update the text fields with the steering and speed
             self.update_steering()
