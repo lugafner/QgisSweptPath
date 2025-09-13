@@ -36,7 +36,7 @@ In the current version, the plug-in has not yet been published on the official Q
 - Automatic dissolving the swept over lines to areas
 - Developer manual (including instructions for adding your own vehicles) 
 
-More information on the development progress and planned features can be found directly on [GitHub](https://github.com/users/lugafner/projects/3)
+More information on the development progress and planned features can be found directly on [GitHub](https://github.com/users/lugafner/projects/3/views/1)
 
 ---
 
