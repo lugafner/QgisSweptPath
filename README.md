@@ -15,17 +15,28 @@ For the developers of QgisSweptPath, Lukas Gafner
 
 ---
 
-QgisSweptPath ist ein Plug-in für die Open-Source-GIS-Software QGIS für einfache Schleppkurvenprüfungen.
-Das Plug-in ist vor allem für grobe Machbarkeitsabklärungen geeignet und hat nicht den Anspruch die Genauigkeit und Abklärungstiefe
-von professionellen Schleppkurvensimulationsprogrammen für CAD-Systeme zu erreichen.
+## Installation  
+In the current version, the plug-in has not yet been published on the official QGIS plug-in website. However, the plug-in can be downloaded from the GitHub page and installed manually. To install it, follow these steps:
 
-Bei der Entwicklung des Plug-ins wird darauf geachtet, dass die Schleppkurven möglichst den realen Fahrzeugen entsprechen
-und die Simulationsergebnisse werden nach bestem Wissen und Gewissen geprüft. Dennoch kann nicht gewährleistet werden, dass
-die Simulation in allen Fällen die Realität korrekt abbildet. Die Entwickler übernehmen keine Verantwortung für die Richtigkeit und
-Genauigkeit der mit diesem Plug-in durchgeführten Schleppkurvenprüfungen. Für die Überprüfung und Plausibilisierung der Simulationsergebnisse
-ist der Anwender selber verantwortlich.
+1. Download the zip file [QgisSweptPath_0.0.1](.)
+2. Open the plug-in manager in QGIS
+3. Select **Install from ZIP** and install the downloaded file
 
-Für die Entwickler von QgisSweptPath, Lukas Gafner
+## Features already available
+- Manual control of vehicles 
+- Overdriven and swept over areas (as lines) as QGIS layers
+- One standard bus and one articulated bus
+- Various options and settings for vehicle control
+- User manual in german
+
+## Planned features still under development
+- Automatic driving along previously drawn lines
+- Additional standard vehicles (buses and lorries)
+- Simulation of vehicles with rear-wheel steering
+- Automatic dissolving the swept over lines to areas
+- Developer manual (including instructions for adding your own vehicles) 
+
+More information on the development progress and planned features can be found directly on [GitHub](https://github.com/users/lugafner/projects/3)
 
 ---
 
