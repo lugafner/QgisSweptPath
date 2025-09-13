@@ -4,17 +4,26 @@ import inspect
 from pathlib import Path
 from typing import Optional
 
+from qgis.PyQt.QtCore import QObject, pyqtSignal
+
+from .qgis_swept_path_enum import VehicleStatusAction, VehicleStatusType
 from .coord import PolarCoord, CartesianCoord, CoordUtils
+from .vehicle_status import VehicleStatus
 
 
-class Vehicle:
+class Vehicle(QObject):
     vehicle_name: str = "Vehicle"
     """Name of vehicle. Will be shown in combo box for vehicle selection"""
     is_main_vehicle: bool = False
     """Set as main vehicle or just as trailer part. Only main vehicles are shown for vehicle selection"""
 
+    # QT Signals
+    pauseSimulation: pyqtSignal = pyqtSignal(VehicleStatus, name="pauseSimulation")
+    stopSimulation: pyqtSignal = pyqtSignal(VehicleStatus, name="stopSimulation")
+
 
     def __init__(self):
+        super().__init__(None)
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
         # Body
@@ -25,13 +34,14 @@ class Vehicle:
         self._rear_axle_ref_pos: float = 11.65  # meter from front
         self._axle_with: float = 2.50  # meter incl. tires
         # Steering angle  (i.e. 49 deg)
-        self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
+        self._max_steering_angle: float = 49.0 / 180 * math.pi  # In radians
         
         # Trailer and vehicle hierarchy
         self._trailer: Optional[Vehicle] = None
         """Create trailer object here, if the vehicle has a trailer. Set to None, if the vehicle has no trailer"""
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
+        self._max_trailer_angle: float = 54.0 / 180 * math.pi  # Maximum trailer angle in radians
         
         # Vehicle type (init with True for standard vehicle)
         self._has_body: bool = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
@@ -61,6 +71,7 @@ class Vehicle:
         self._vehicle_is_placed: bool = False
         self._maximum_speed: float = 8.33
         self._vehicle_parts: list[Vehicle] = []  # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
+        self._ignore_bending_angle: bool = False  # Will be set to true, if the simulation is continued after reaching max angle
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -231,6 +242,15 @@ class Vehicle:
         # Simulate trailer
         if self._trailer:
             self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
+            # Check max trailer angle
+            if (not self._ignore_bending_angle) and abs(self._trailer_angle) > self._max_trailer_angle:
+                self.pauseSimulation.emit(VehicleStatus(
+                    self.vehicle_name,
+                    VehicleStatusAction.PAUSE,
+                    VehicleStatusType.MAX_ANGLE,
+                    "Max bending angle",
+                    "Bending angle of trailer reached maximum of {} deg".format(self._max_trailer_angle / math.pi * 180)
+                ))
 
 
     def step(self, distance: float):
@@ -238,7 +258,7 @@ class Vehicle:
         Calculates the next point based on current location and steering angle
         @param distance: Distance to drive with one step
         """
-        assert self._vehicle_is_placed, "Vehicle must be placed firs"
+        assert self._vehicle_is_placed, "Vehicle must be placed first"
         if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
         self._drive(distance)
 
@@ -505,3 +525,16 @@ class Vehicle:
         """
         return self._vehicle_is_placed
 
+    @property
+    def ignore_bending_angle(self) -> bool:
+        """
+        Returns true, if the max bending angle is ignored
+        """
+        return self._ignore_bending_angle
+
+    @ignore_bending_angle.setter
+    def ignore_bending_angle(self, v: bool):
+        """
+        If true, the max bending angle is not monitored
+        """
+        self._ignore_bending_angle = v
