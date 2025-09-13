@@ -121,6 +121,8 @@ class QgisSweptPath:
             self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
             self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
             self.dockwidget.btnPauseResumeSimulation.clicked.connect(self._pause_resume_simulation)
+            self.dockwidget.btnResetVehicleStyle.clicked.connect(self._set_default_vehicle_layer_style)
+            self.dockwidget.btnResetPathStyle.clicked.connect(self._set_default_path_layer_style)
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
@@ -630,6 +632,9 @@ class QgisSweptPath:
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_vehicle_layer_id(self._vehicle_layer.id())
 
+        # Set default style
+        self._set_default_vehicle_layer_style()
+
 
     def _create_path_layer(self):
         """
@@ -668,6 +673,9 @@ class QgisSweptPath:
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_path_layer_id(self._path_layer.id())
+        
+        # Set default style
+        self._set_default_path_layer_style()
 
         # Show dialog to save the path layer to file/database
         save_dialog = QgsVectorLayerSaveAsDialog(self._path_layer, QgsVectorLayerSaveAsDialog.Option.Symbology)
@@ -688,6 +696,7 @@ class QgisSweptPath:
                     "{}|layername={}".format(save_dialog.fileName(), save_dialog.layerName()),
                     self._path_layer.name(),
                     'ogr')
+
             else:
                 # On error show message and keep local layer
                 self.iface.messageBar().pushWarning(
@@ -702,6 +711,20 @@ class QgisSweptPath:
                 "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
                 "when the project is closed. The created layer must be saved manually",
             )
+
+
+    def _set_default_path_layer_style(self):
+        # Set default style for path layer
+        absolute_style_path = os.path.abspath(self.prop.path_layer_style)
+        self._path_layer.loadNamedStyle(absolute_style_path)
+        self._path_layer.triggerRepaint()
+
+
+    def _set_default_vehicle_layer_style(self):
+        # Set default style for vehicle layer
+        absolute_style_path = os.path.abspath(self.prop.vehicle_layer_style)
+        self._vehicle_layer.loadNamedStyle(absolute_style_path)
+        self._vehicle_layer.triggerRepaint()
 
 
     def _check_place_vehicle(self):
