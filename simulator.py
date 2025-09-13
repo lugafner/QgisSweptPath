@@ -4,7 +4,7 @@ import time
 from threading import Thread
 from typing import Optional
 
-from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
+from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent
 from qgis.gui import QgsMapCanvas
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
@@ -216,3 +216,5 @@ class Simulator(QObject):
     @vehicle.setter
     def vehicle(self, v: Vehicle):
         self._vehicle = v
+
+
