@@ -24,7 +24,7 @@
 
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton
 from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter, QgsRectangle
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
 from uuid import uuid4
@@ -39,6 +39,7 @@ import os.path
 
 # Import SweptPath code
 from .vehicle import Vehicle
+from .vehicle_status import VehicleStatus, VehicleStatusType, VehicleStatusAction
 
 from .coord import CoordUtils
 from .vehicle_placer import VehiclePlacer
@@ -430,6 +431,10 @@ class QgisSweptPath:
             self.simulator.storePath.disconnect(self._store_path_points)
             self._write_path_to_layer()
 
+        # Reset bending angle monitoring for all vehicle parts
+        for v in self.vehicle.vehicle_parts:
+            v.ignore_bending_angle = False
+
         # Update buttons text and status
         self.dockwidget.btnStartStopSimulation.setText("START")
         self.dockwidget.btnShowProperties.setEnabled(True)
@@ -490,10 +495,61 @@ class QgisSweptPath:
             self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
 
 
+    def _vehicle_stopped_simulation(self, vehicle_status: VehicleStatus):
+        # Called, when the vehicle stop simulation signal is sent
+        # Stop the simulation and show status
+        self.stopSimulation()
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Vehicle stopped simulation")
+        btn_close: QPushButton = message_box.addButton("Close", QMessageBox.AcceptRole)
+
+        # Case switch for vehicle status type
+        if vehicle_status.status_type == VehicleStatusType.UNDEFINED_ERROR:
+            message_box.setText(("Undefined error in vehicle: {}\n"
+                                "Original message: ").format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_close:
+                return
+
+
+    def _vehicle_paused_simulation(self, vehicle_status: VehicleStatus):
+        # Called, when the vehicle pause simulation signal is sent
+        self._pause_resume_simulation()
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Vehicle paused simulation")
+        btn_stop: QPushButton = message_box.addButton("Stop simulation", QMessageBox.ActionRole)
+
+        # Case switch for vehicle status type
+        if vehicle_status.status_type == VehicleStatusType.UNDEFINED_ERROR:
+            message_box.setText(("Undefined error in vehicle: {}\n"
+                                "Original message: {}").format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_stop:
+                self.stopSimulation()
+
+        if vehicle_status.status_type == VehicleStatusType.MAX_ANGLE:
+            btn_resume: QPushButton = message_box.addButton("Resume simulation", QMessageBox.ActionRole)
+            message_box.setText("Maximal bending angle reached.\n"
+                                "If the simulation is continued, it does not simulate a real situation.\n"
+                                "Vehicle {}.\n"
+                                "Original message: {}".format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_stop:
+                self.stopSimulation()
+            elif message_box.clickedButton() == btn_resume:
+                for v in self.vehicle.vehicle_parts:
+                    v.ignore_bending_angle = True
+                self._pause_resume_simulation()
+
+
     def _reset_vehicle(self):
         # Uncheck vehicle status and delete vehicle
         self.dockwidget.chbCreateVehicle.setChecked(False)
+        self._disconnect_vehicle_signals()
         self.vehicle = None
+
 
     def _setup_vehicle(self):
         self.dockwidget.chbCreateVehicle.setChecked(False)
@@ -503,8 +559,27 @@ class QgisSweptPath:
 
         vehicle_module = __import__(vehicle_item[1], fromlist=[vehicle_item[0]])
         vehicle_class = getattr(vehicle_module, vehicle_item[0])
+
+        self._disconnect_vehicle_signals()
         self.vehicle = vehicle_class()
+        self._connect_vehicle_signals()
+
         self.dockwidget.chbCreateVehicle.setChecked(True)
+
+
+    def _connect_vehicle_signals(self):
+        # Connects the signals for all child vehicles
+        for v in self.vehicle.vehicle_parts:
+            v.pauseSimulation.connect(self._vehicle_paused_simulation)
+            v.stopSimulation.connect(self._vehicle_stopped_simulation)
+
+
+    def _disconnect_vehicle_signals(self):
+        # Disconnects the signals for all child vehicles
+        if isinstance(self.vehicle, Vehicle):
+            for v in self.vehicle.vehicle_parts:
+                v.pauseSimulation.disconnect(self._vehicle_paused_simulation)
+                v.stopSimulation.disconnect(self._vehicle_stopped_simulation)
 
 
     def _place_vehicle(self):
