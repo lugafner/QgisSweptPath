@@ -121,8 +121,6 @@ class QgisSweptPath:
             self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
             self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
             self.dockwidget.btnPauseResumeSimulation.clicked.connect(self._pause_resume_simulation)
-            self.dockwidget.btnResetVehicleStyle.clicked.connect(self._set_default_vehicle_layer_style)
-            self.dockwidget.btnResetPathStyle.clicked.connect(self._set_default_path_layer_style)
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
@@ -131,6 +129,8 @@ class QgisSweptPath:
             # Signals from properties
             self.prop.vehicleLayerChanged.connect(self.setupVehicleLayer)
             self.prop.pathLayerChanged.connect(self.setupPathLayer)
+            self.prop.btnReloadVehicleLayerStyle.clicked.connect(self._set_default_vehicle_layer_style)
+            self.prop.btnReloadPathLayerStyle.clicked.connect(self._set_default_path_layer_style)
 
             self.setupLayers()
             self.setupVehicleList()
@@ -715,14 +715,14 @@ class QgisSweptPath:
 
     def _set_default_path_layer_style(self):
         # Set default style for path layer
-        absolute_style_path = os.path.abspath(self.prop.path_layer_style)
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.path_layer_style))
         self._path_layer.loadNamedStyle(absolute_style_path)
         self._path_layer.triggerRepaint()
 
 
     def _set_default_vehicle_layer_style(self):
         # Set default style for vehicle layer
-        absolute_style_path = os.path.abspath(self.prop.vehicle_layer_style)
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.vehicle_layer_style))
         self._vehicle_layer.loadNamedStyle(absolute_style_path)
         self._vehicle_layer.triggerRepaint()
 

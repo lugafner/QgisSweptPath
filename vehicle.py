@@ -184,7 +184,6 @@ class Vehicle:
         Calculate the radius, on which the front wheel point (f) drives
         Can only be calculated when the wheels are turned
         """
-        print(self._wheelbase / math.sin(self._steering_angle))
         return float(self._wheelbase / math.sin(self._steering_angle))
 
     # Not used since rear wheel path is calculated on straight segments
