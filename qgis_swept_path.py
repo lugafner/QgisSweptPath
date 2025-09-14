@@ -121,8 +121,6 @@ class QgisSweptPath:
             self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
             self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
             self.dockwidget.btnPauseResumeSimulation.clicked.connect(self._pause_resume_simulation)
-            self.dockwidget.btnResetVehicleStyle.clicked.connect(self._set_default_vehicle_layer_style)
-            self.dockwidget.btnResetPathStyle.clicked.connect(self._set_default_path_layer_style)
 
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
@@ -131,6 +129,8 @@ class QgisSweptPath:
             # Signals from properties
             self.prop.vehicleLayerChanged.connect(self.setupVehicleLayer)
             self.prop.pathLayerChanged.connect(self.setupPathLayer)
+            self.prop.btnReloadVehicleLayerStyle.clicked.connect(self._set_default_vehicle_layer_style)
+            self.prop.btnReloadPathLayerStyle.clicked.connect(self._set_default_path_layer_style)
 
             self.setupLayers()
             self.setupVehicleList()
