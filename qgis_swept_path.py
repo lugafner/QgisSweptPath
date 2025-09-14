@@ -715,14 +715,14 @@ class QgisSweptPath:
 
     def _set_default_path_layer_style(self):
         # Set default style for path layer
-        absolute_style_path = os.path.abspath(self.prop.path_layer_style)
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.path_layer_style))
         self._path_layer.loadNamedStyle(absolute_style_path)
         self._path_layer.triggerRepaint()
 
 
     def _set_default_vehicle_layer_style(self):
         # Set default style for vehicle layer
-        absolute_style_path = os.path.abspath(self.prop.vehicle_layer_style)
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.vehicle_layer_style))
         self._vehicle_layer.loadNamedStyle(absolute_style_path)
         self._vehicle_layer.triggerRepaint()
 
