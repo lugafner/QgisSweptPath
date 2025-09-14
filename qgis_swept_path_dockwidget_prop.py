@@ -5,7 +5,7 @@ from typing import override
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
-from qgis.core import QgsSettings
+from qgis.core import QgsProject
 
 from .qgis_swept_path_enum import SimulationMode, BorderDistanceUnits
 
@@ -22,6 +22,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         """Constructor."""
         super(QgisSweptPathDockWidgetProp, self).__init__(parent)
         self.setupUi(self)
+        self.proj: QgsProject = QgsProject.instance()
 
         # Properties with default values
         self._frames: int = 24  # Frames per second for frame based simulation
@@ -53,31 +54,31 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
-            "_frames": "qgissweptpath/frames",
-            "_step_distance": "qgissweptpath/step_distance",
-            "_print_path": "qgissweptpath/print_path",
-            "_print_interval": "qgissweptpath/print_interval",
-            "_print_distance": "qgissweptpath/print_distance",
-            "_vehicle_layer_style": "qgissweptpath/vehicle_layer_style",
-            "_path_layer_style": "qgissweptpath/path_layer_style",
-            "_vehicle_layer_id": "qgissweptpath/vehicle_layer_id",
-            "_path_layer_id": "qgissweptpath/path_layer_id",
-            "_dissolve_path": "qgissweptpath/dissolve_path",
-            "_dissolve_fields": "qgissweptpath/dissolve_fields",
-            "_speed_change_step": "qgissweptpath/speed_change_step",
-            "_steer_change_step": "qgissweptpath/steer_change_step",
-            "_steering_time": "qgissweptpath/steering_time",
-            "_acceleration": "qgissweptpath/acceleration",
-            "_minimum_speed": "qgissweptpath/minimum_speed",
-            "_simulation_mode": "qgissweptpath/simulation_mode",
-            "_key_steer_left": "qgissweptpath/key_steer_left",
-            "_key_steer_right": "qgissweptpath/key_steer_right",
-            "_key_speed_up": "qgissweptpath/key_speed_up",
-            "_key_speed_down": "qgissweptpath/key_speed_down",
-            "_vehicle_packages": "qgissweptpath/vehicle_packages",
-            "_border_distance_units": "qgissweptpath/border_distance_units",
-            "_auto_map_movement": "qgissweptpath/auto_map_movement",
-            "_border_distance": "qgissweptpath/border_distance"
+            "_frames": "frames",
+            "_step_distance": "step_distance",
+            "_print_path": "print_path",
+            "_print_interval": "print_interval",
+            "_print_distance": "print_distance",
+            "_vehicle_layer_style": "vehicle_layer_style",
+            "_path_layer_style": "path_layer_style",
+            "_vehicle_layer_id": "vehicle_layer_id",
+            "_path_layer_id": "path_layer_id",
+            "_dissolve_path": "dissolve_path",
+            "_dissolve_fields": "dissolve_fields",
+            "_speed_change_step": "speed_change_step",
+            "_steer_change_step": "steer_change_step",
+            "_steering_time": "steering_time",
+            "_acceleration": "acceleration",
+            "_minimum_speed": "minimum_speed",
+            "_simulation_mode": "simulation_mode",
+            "_key_steer_left": "key_steer_left",
+            "_key_steer_right": "key_steer_right",
+            "_key_speed_up": "key_speed_up",
+            "_key_speed_down": "key_speed_down",
+            "_vehicle_packages": "vehicle_packages",
+            "_border_distance_units": "border_distance_units",
+            "_auto_map_movement": "auto_map_movement",
+            "_border_distance": "border_distance"
         }
 
         # Fields to store the information, if the layer ids were changed
@@ -199,18 +200,42 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         Read properties from QGIS project
         and load into the fields
         """
-        settings = QgsSettings()
         for k, v in self._properties.items():
-            setattr(self, k, settings.value(v, getattr(self, k), type=type(getattr(self, k))))
+            default_value = getattr(self, k)
+            if isinstance(default_value, str):
+                read_function = self.proj.readEntry
+            elif isinstance(default_value, int):
+                read_function = self.proj.readNumEntry
+            elif isinstance(default_value, float):
+                read_function = self.proj.readDoubleEntry
+            elif isinstance(default_value, bool):
+                read_function = self.proj.readBoolEntry
+            else:
+                continue
+
+            attr , type_conversion_ok = read_function("QgisSweptPath", v, getattr(self, k))
+            if type_conversion_ok:
+                setattr(self, k, attr)
 
 
     def _write_properties(self):
         """
         Writes the properties to the QGIS project
         """
-        settings = QgsSettings()
         for k, v in self._properties.items():
-            settings.setValue(v, getattr(self, k))
+            current_value = getattr(self, k)
+            if isinstance(current_value, str):
+                write_function = self.proj.writeEntry
+            elif isinstance(current_value, int):
+                write_function = self.proj.writeEntry
+            elif isinstance(current_value, float):
+                write_function = self.proj.writeEntryDouble
+            elif isinstance(current_value, bool):
+                write_function = self.proj.writeEntryBool
+            else:
+                continue
+
+            write_function("QgisSweptPath", v, getattr(self, k))
 
 
     def _show_file_select_dialog(self,
