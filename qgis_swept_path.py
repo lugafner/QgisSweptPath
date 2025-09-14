@@ -153,31 +153,37 @@ class QgisSweptPath:
         self.add_action("Steer left",
                         self.simulator.steerLeft,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/steer_left.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+J")
         self.add_action("Steer right",
                         self.simulator.steerRight,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/steer_right.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+L")
         self.add_action("Speed up",
                         self.simulator.speedUp,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/speed_up.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+I")
         self.add_action("Speed down",
                         self.simulator.speedDown,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/speed_down.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+K")
         self.add_action("Start/Stop simulation",
                         self.startStopSimulation,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/start_stop.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+U")
         self.add_action("Pause/Resume simulation",
                         self._pause_resume_simulation,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/pause_resume.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+O")
 
