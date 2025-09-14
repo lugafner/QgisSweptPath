@@ -28,6 +28,7 @@ class Gelenkbus1875(Vehicle):
         # Trailer and vehicle hierarchy
         self.trailer = Gelenkbus1875Trailer()  # Trailer. Always use setter of property
         self._connection_point = 10.60  # meter from front
+        self._max_trailer_angle: float = 54.0 / 180 * math.pi  # Maximum trailer angle in radians
 
         # Vehicle type
         self._has_body = True
