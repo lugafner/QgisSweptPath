@@ -149,16 +149,14 @@ class Vehicle(QObject):
         @return: Angle between vehicle and trailer (0.0 = straight) in radians
         """
 
-        vehicle_a = self._global_a
-        trailer_a = self._trailer._global_a
+        vehicle_a = self._global_a % (math.pi * 2)
+        trailer_a = self._trailer._global_a % (math.pi * 2)
 
-        angle = vehicle_a - trailer_a
+        if vehicle_a - trailer_a > math.pi * 2:
+            vehicle_a -= math.pi * 2
 
-        if vehicle_a < 0 < trailer_a:
-            vehicle_a += math.pi
-
-        if vehicle_a > 0 > trailer_a:
-            trailer_a += math.pi
+        if vehicle_a - trailer_a < math.pi * -2:
+            trailer_a -= math.pi * 2
 
         # if self._global_a >= math.pi:
         #     vehicle_a = self._global_a - math.pi
