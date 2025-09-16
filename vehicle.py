@@ -252,7 +252,6 @@ class Vehicle(QObject):
         if self._trailer:
             self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
             # Check max trailer angle
-            print("{} -- {} -- {}".format(self._global_a / math.pi * 180, self._trailer._global_a / math.pi * 180, self._trailer_angle / math.pi * 180))
             if (not self._ignore_bending_angle) and abs(self._trailer_angle) > self._max_trailer_angle:
                 self.pauseSimulation.emit(VehicleStatus(
                     self.vehicle_name,
