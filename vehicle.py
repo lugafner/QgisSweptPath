@@ -148,7 +148,17 @@ class Vehicle(QObject):
 
         @return: Angle between vehicle and trailer (0.0 = straight) in radians
         """
-        return self._global_a - self._trailer._global_a
+
+        # Normalise global vehicle and trailer angles
+        vehicle_a = self._global_a - abs(int(self._global_a / math.pi * 2)) * math.pi * 2
+        trailer_a = self._trailer._global_a - abs(int(self._trailer._global_a / math.pi * 2)) * math.pi * 2
+
+        # Calculate angle difference between -180 and +180 deg
+        angle = vehicle_a - trailer_a
+        if angle < math.pi * -1:
+            angle += math.pi * 2
+
+        return angle
 
 
     def _calc_global_coord(self, local_coord: PolarCoord, reference_point: CartesianCoord = None) -> CartesianCoord:
@@ -258,7 +268,9 @@ class Vehicle(QObject):
         @param distance: Distance to drive with one step
         """
         assert self._vehicle_is_placed, "Vehicle must be placed first"
-        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        if self._trailer:
+            self._trailer_angle = self._calc_angle_between_trailer()
+
         self._drive(distance)
 
 
@@ -275,8 +287,11 @@ class Vehicle(QObject):
         self._global_f = connection_point
         self._steering_angle = vehicle_angle
 
-        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        if self._trailer:
+            self._trailer_angle = self._calc_angle_between_trailer()
+
         self._drive(distance)
+
 
 
     def speed_up(self, step: float):
