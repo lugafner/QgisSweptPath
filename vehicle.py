@@ -157,6 +157,8 @@ class Vehicle(QObject):
         angle = vehicle_a - trailer_a
         if angle < math.pi * -1:
             angle += math.pi * 2
+        elif angle > math.pi:
+            angle -= math.pi * 2
 
         return angle
 
