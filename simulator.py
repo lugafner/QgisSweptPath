@@ -112,6 +112,12 @@ class Simulator(QObject):
         self._simulation_running = False
         self._simulation_paused = False
 
+        # Reset flags for steering and speed change
+        self._steer_right = False
+        self._steer_left = False
+        self._speed_up = False
+        self._speed_down = False
+
         self.drawVehicle.emit()
         self.storePath.emit()
 
