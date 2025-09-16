@@ -149,30 +149,16 @@ class Vehicle(QObject):
         @return: Angle between vehicle and trailer (0.0 = straight) in radians
         """
 
-        vehicle_a = self._global_a % (math.pi * 2)
-        trailer_a = self._trailer._global_a % (math.pi * 2)
+        # Normalise global vehicle and trailer angles
+        vehicle_a = self._global_a - abs(int(self._global_a / math.pi * 2)) * math.pi * 2
+        trailer_a = self._trailer._global_a - abs(int(self._trailer._global_a / math.pi * 2)) * math.pi * 2
 
-        if vehicle_a - trailer_a > math.pi * 2:
-            vehicle_a -= math.pi * 2
+        # Calculate angle difference between -180 and +180 deg
+        angle = vehicle_a - trailer_a
+        if angle < math.pi * -1:
+            angle += math.pi * 2
 
-        if vehicle_a - trailer_a < math.pi * -2:
-            trailer_a -= math.pi * 2
-
-        # if self._global_a >= math.pi:
-        #     vehicle_a = self._global_a - math.pi
-        # elif self._global_a <= math.pi * -1:
-        #     vehicle_a = self._global_a + math.pi
-        # else:
-        #     vehicle_a = self._global_a
-        #
-        # if self._trailer._global_a >= math.pi:
-        #     trailer_a = self._trailer._global_a - math.pi
-        # elif self._trailer._global_a <= math.pi * -1:
-        #     trailer_a = self._trailer._global_a + math.pi
-        # else:
-        #     trailer_a = self._trailer._global_a
-
-        return vehicle_a - trailer_a
+        return angle
 
 
     def _calc_global_coord(self, local_coord: PolarCoord, reference_point: CartesianCoord = None) -> CartesianCoord:
@@ -266,7 +252,7 @@ class Vehicle(QObject):
         if self._trailer:
             self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
             # Check max trailer angle
-            print("{} -- {}".format(self._global_a, self._trailer._global_a))
+            print("{} -- {} -- {}".format(self._global_a / math.pi * 180, self._trailer._global_a / math.pi * 180, self._trailer_angle / math.pi * 180))
             if (not self._ignore_bending_angle) and abs(self._trailer_angle) > self._max_trailer_angle:
                 self.pauseSimulation.emit(VehicleStatus(
                     self.vehicle_name,
@@ -302,7 +288,9 @@ class Vehicle(QObject):
         self._global_f = connection_point
         self._steering_angle = vehicle_angle
 
-        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        if self._trailer:
+            self._trailer_angle = self._calc_angle_between_trailer()
+
         self._drive(distance)
 
 
