@@ -10,7 +10,6 @@
   - [Fahrzeug- und Pfadlayer erstellen](#fahrzeug--und-pfadlayer-erstellen)
   - [Fahrzeug auswählen](#fahrzeug-auswählen)
   - [Fahrzeug platzieren](#fahrzeug-platzieren)
-  - [Simulation starten](#simulation-starten)
   - [Fahren](#fahren)
 - [Einstellungen](#einstellungen)
   - [Layer](#layer)
@@ -42,23 +41,104 @@ Anliegen gerne im offiziellen [Github-Repository](https://github.com/lugafner/Qg
 
 
 ## Kurzanleitung
+### QgisSweptPath installieren
+In der aktuellen Version 0.1.0 ist das Plugin noch nicht über das Plugin-Repository von QGIS verfügbar. Das Plugin muss
+direkt von Github heruntergeladen und manuell installiert werden. Der jeweils neuste Release ist [hier](https://github.com/lugafner/QgisSweptPath/releases)
+zu finden. Für die Installation muss die angehängte ZIP-Datei heruntergeladen und an einem beliebigen Ort abgespeichert werden.
+
+Danach kann im Plugin-Manager von QGIS über **Aus ZIP Datei installieren** die heruntergeladene Datei ausgewählt werden. Das
+Plugin wird danach im QGIS Benutzerverzeichnis im Plugin-Ordner installiert. Sofern nicht automatisch geschehen muss danach
+in der Liste der installierten Plugins der Haken vor **QgisSweptPath** gesetzt werden.
+
+![Install From Zip](./img/PluginsDialog_InstallFromZip.png)
+
 ### QgisSweptPath starten
-aaa
+QgisSweptPath wird beim Öffnen eines Projekts nicht automatisch gestartet. Das Plugin kann unter dem Menüpunkt **Plugins** -
+**QgisSweptPath** - **QgisSweptPath** geöffnet werden. Das Dock-Widget wird unten rechts angedockt.
+
+![Dock widget initialised](./img/DockWidget_Initialised.png)
 
 ### Fahrzeug- und Pfadlayer erstellen
-aaa
+Bevor QgisSweptPath das erste Mal verwendet werden kann, müssen zwei Layer erstellt werden: **Fahrzeuglayer** und **Pfadlayer**.
+Diese beiden Layer werden für die Darstellung des Fahrzeugs und die Generierung der Schleppkurven benötigt. Wurde das Plugin im
+gleichen QGIS-Projekt bereits verwendet, werden die Refernzen auf diese Layer beim Pluginstart automatisch geladen. Falls die
+Layer nicht mehr verfügbar sind, wird eine entsprechende Warnung angezeigt. Ansonsten können die folgenden beiden 
+Schritte übersprungen werden.
+
+#### Fahrzeuglayer erstellen
+Der Fahrzeuglayer ist ein Temporärlayer. Theoretisch kann auch ein Layer mit einer anderen Datenquelle verwendet werden. Aus
+Performancegründen wird das jedoch nicht empfohlen. Um den Layer zu erstellen, kann die Schaltfläche **New Vehicle Layer**
+verwendet werden. Es wird ein neuer Layer mit der Bezeichnung **vehicle** im Projekt eingefügt. Dem Layer wird automatisch
+der hinterlegte Standardstil für die Darstellung der Fahrzeuge zugewiesen. Wenn die Layererstellung erfolgreich war, wird
+der Haken rechts von der Schaltfläche gesetzt. Danach kann die Schaltfläche nicht mehr verwendet werden, ausser der Haken 
+wird zuvor manuell entfernt. Wird ein neuer Fahrzeuglayer erstellt, während bereits ein Fahrzeuglyer registriert ist, wird
+die Referenz auf den neuen Layer geändert, d.h. die Fahrzeuge werden auch mit dem Stil des neuen Layers angezeigt.
+
+In den Einstellungen kann auch manuell eine Referenz auf einen bestehenden Layer eingetragen werden. Siehe [hier](#layer).
+
+#### Pfadlayer erstellen
+Die gezeichneten Schleppkurven werden auf diesem Layer gezeichnet und mit dem entsprechenden Datenanbieter gespeichert. 
+Die Funktionalität funktioniert gleich wie beim Fahrzeuglayer [siehe Fahrzeuglayer erstellen](#fahrzeuglayer-erstellen).
+Der einzige Unterschied ist, dass der Pfadlayer als permanenter Layer angelegt wird. Nach dem Klick auf die Schaltfläche
+**New Path Layer** wird ein neuer Polyline-Layer angelegt und der Dialog zum Speichern des Layers wird angezeigt. Wurde der
+Layer erfolgreich angelegt, wird die Schaltfläche mit dem Haken rechts davon gesperrt.
+
+Beim Pfadlayer kann es vorkommen, dass ein bereits vorhandener Layer verwendet werden soll, z.B. wenn mehrere Schleppkurven
+in verschiedene Layer geschrieben werden sollten. Dazu kann die Referenz auf den Pfadlayer in den QgisSweptPath-Einstellungen
+manuell geändert werden. Siehe [hier](#layer).
 
 ### Fahrzeug auswählen
-aaa
+In der Auswahlbox unter den Schaltflächen für die Layererstellung kann das zu simulierende Fahrzeug ausgewählt werden.
+Standardmässig stehen dort alle mitgelieferten Fahrzeugtypen zur Auswahl. Diese Fahrzeugdefinitionen sind im Installationserzeichnis
+angelegt. QgisSweptPath bietet auch die Möglichkeit Fahrzeuge aus einem benutzerdefinierten Verzeichnis zu laden. Dazu muss
+das entsprechende Verzeichnis in den Einstellungen angegeben werden [siehe Benutzerfahrzeuge](#benutzerfahrzeuge). Die Details
+zur Erstellung von benutzerdefinierten Fahrzeugen werden in der [Entwicklerdokumentation]() beschrieben (coming soon).
+
+Nachdem das Fahrzeug ausgewählt wurde, muss das Fahrzeug erstellt werden. Dazu muss die Schaltfläche **Create Vehicle** betätigt
+werden. Die Aktion wird mit dem Haken rechts der Schaltfläche bestätigt. Wird für einen nächsten Simulationsdurchgang ein anderes 
+Fahrzeug verwendet, kann dieses aus der Liste ausgewählt werden und ebenfalls mit der Schaltfläche erstellt werden. 
 
 ### Fahrzeug platzieren
-aaa
+Bevor die Simulation gestartet werden kann, muss das Fahrzeug platziert werden. Dazu ist die Schaltfläche **Place Vehicle** zu 
+verwenden. Nach dem Klick auf die Schaltfläche wird am Mauszeiger auf dem Map-Canvas der Umriss des Fahrzeugs angezeigt (bei mehrteiligen 
+Fahrzeugen wird nur das Zugfahrzeug dargestellt). 
 
-### Simulation starten
-aaa
+Die Platzierung erfolgt über die linke und rechte Maustaste. Mit dem ersten Linksklick wird die Position des Fahrzeugs gesetzt. 
+Danach kann das Fahrzeug mit der Maus um den Basispunkt gedreht werden. Sobald die Ausrichtung stimmt, kann das Platzieren mit 
+einem Rechtsklick abgeschlossen werden. Muss stattdessen die Position nochmals korrigiert werden, kann statt dem Rechtsklick mit einem
+erneuten Linksklick wieder in den Verschiebemodus umgeschaltet werden. Der Prozess kann sowohl im Verschiebe- als auch im Rotationsmodus 
+mit dem Rechtsklick abgeschlossen werden.
 
 ### Fahren
-aaa
+Die Simulation wird mit der Schaltfläche **START** gestartet. Alternativ kann die Tastenkombination **Ctrl+Shift+U** verwendet 
+werden (oder eine eigene definierte Tastenkombination in den QGIS-Einstellungen). Das Fahrzeug hat in diesem Moment noch keine Geschwindigkeit und 
+die Räder sind geradegestellt. Für die Simulation stehen zwei Methoden zur Verfügung. Hier wird die Standardmässig 
+verwendete Methode beschrieben. Weitere Informationen zur alternativen Steuerung sind im Abschnitt [Schritt basierte Simulation](#schritt-basierte-simulation)
+ausgeführt.
+
+Standardmässig wird die [Frame basierte Simulation](#frame-basierte-simulation) verwendet. Hierbei erfolgt die Simulation mit 
+einer vordefinierten Framerate (Simulationsschritte pro Sekunde) ausgeführt. Die Voraussetzung für diesen Simulationsmodus ist, 
+dass die Hardwareleistung die Simulationsberechnungen im vorgegebenen Zeitintervall ausführen kann ([siehe Problembehandlung](#problembehandlung)). 
+Die Steuerung erfolgt bei der Frame basierter Simulation mit je einer einzelnen Taste. Standardmässig wird die folgende Belegung verwendet:
+- **Beschleunigen**: I
+- **Verlangsamen**: K
+- **Nach rechts lenken**: L
+- **Nach links lenken**: J
+
+Diese Tasten können in den QgisSweptPath-Einstellungen (nicht QGIS-Einstellungen) angepasst werden ([siehe Frame basierte Simulation](#frame-basierte-simulation)). 
+Wichtig ist, dass sich diese Tasten nicht mit in den QGIS-Einstellungen hinterlegten Tasten überlagern. Die Brems-, Beschleunigungs- und 
+Lenkgeschwindigkeit ist einem realen Fahrzeug nachempfunden. Diese Werte können aber in den QgisSweptPath-Einstellungen angepasst 
+werden ([siehe Frame basierte Simulation](#frame-basierte-simulation)).
+
+Während die Simulation läuft, wird anstelle von **START** die Schaltfläche **STOP** zum Beenden der Simulation angezeigt. 
+Sofern in den Einstellungen das Zeichnen der Schleppkurve eingeschaltet ist ([siehe Plot Einstellungen](#plot-einstellungen)) 
+wird nach dem Beenden der Pfad gezeichnet. Je nach ausgewählter Auflösung, Datenanbieter und Datenspeicherort kann dieser Vorgang
+einige Zeit in anspruch nehmen. Danach wird der Pfad auf dem Pfadlayer dargestellt.
+
+Für kurze Unterbrechungen kann die Simulation mit der Schaltfläche **PAUSE** (oder **Ctrl+Shift+O**) unterbrochen werden. Der Pfad wird in diesem Moment 
+noch nicht gezeichnet. Da die Berechnungen für die Simulation im Hintergrund weiterlaufen, kann eine pausierte Simulation auswirkungen 
+auf die Geschwindigkeit vom QGIS haben.
+
 
 ## Einstellungen
 ### Layer
@@ -86,12 +166,12 @@ aaa
 
 aaa
 
-### Frame basierte simulation
+### Frame basierte Simulation
 *Frame based simulation,Frames, Acceleration/deceleration, Steering time, Key steer left, Key steer right, Key speed up und Key speed down*
 
 aaa
 
-### Schritt basierte simulation
+### Schritt basierte Simulation
 *Step based simulation, Step distance, Speed change step und Steer change step*
 
 aaa
@@ -100,6 +180,17 @@ aaa
 *Dissolve path und Dissolve by fields*
 
 Funktionen in Version 0.1.0 noch nicht verfügbar.
+
+
+## Problembehandlung
+### QGIS-Absturz während der Simulation
+- Bei Frame basierter Simulation (Standardeinstellung)
+  - Framerate reduzieren ([siehe Frame basierte Simulation](#frame-basierte-simulation))
+  - Schritt basierte Simulation verwenden ([siehe Schritt basierte Simulation](#schritt-basierte-simulation))
+- Bei Schritt basierter Simulation
+  - Fahrgeschwindigkeit reduzieren
+  - Schrittdistanz erhöhen ([siehe Schritt basierte Simulation](#schritt-basierte-simulation))
+
 
 ---
 
