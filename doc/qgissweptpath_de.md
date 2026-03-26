@@ -142,24 +142,30 @@ auf die Geschwindigkeit vom QGIS haben.
 
 ## Einstellungen
 ### Layer
-*Vehicle layer und Path layer*
+#### Vehicle layer
+ID des Kartenlayers zur Darstellung des Fahrzeugs (Visualisierung). Dieser Wert wird automatisch eingetragen, wenn im Hauptfenster ein neuer Layer erstellt wird.
+Diese ID wird im QGIS-Projekt gespeichert und bei einem erneuten Start des Projekts automatisch geladen. Falls der Layer mit dieser ID im Projekt nicht existiert, 
+wird, muss auf der Hauptseite ein neuer Vehicle Layer für die Darstellung generiert werden.
 
-aaa
+Falls ein bestehender Layer im Projekt als Vehicle Layer verwendet werden soll, kann durch den Klick auf das Häkchen das Textfeld entsperrt werden. So kann manuell eine 
+Layer-ID eines vorhandenen Kartenlayer eingetragen werden (Punktlayer).
+
+#### Path layer
+ID des Kartenlayers zur Darstellung und Speicherung des generierten Pfads (Ergebnis). Diese Einstellung verhält sich gleich wie die Einstellung [Vehicle layer](#vehicle-layer).
+
 
 ### Plot Einstellungen
-*Print path, Print interval und print distance*
+- **Print path**: Gibt an, ob nach Abschluss der Simulation die Schleppkurve im Path Layer gespeichert werden soll. Default: True
+- **Print interval**: Betrifft nur die schrittbasierte Simulation. Gibt an, nach wie vielen Schritten ein Punkt für die Pfadgenerierung gespeichert werden soll. Default: 2
+- **Print distance**: Betrifft nur die Frame basierte Simulation. Gibt an, in welcher Distanz (Karteneinheiten) ein Punkt für die Pfadgenerierung gespeichert werden soll. Default: 1.0
 
-aaa
 
 ### Layerdarstellung
-*Default vehicle layer style und Default path layer style*
+- **Default vehicle layer style und Default path layer style** definiieren die Standardstile für die Fahrzeug- und Pfadlayer. Diese Stile werden automatisch zugewiesen, wenn ein neuer Layer über die Schaltflächen auf der Hauptseite erstellt wird. 
+Es kann ein absoluter oder relativer Pfad (relativ zum Plugin-Verzeichnis) zu einem QGIS-Style (.qml) angegeben werden.  Default Stile: ./style/vehicle.qml & ./style/path.qml 
+- **Reload Vehicle Layer Style und Reload Path Layer Style** laden die Standardstile vom Dateisystem und weisen sie neu zu.
+- **User vehicle packages** gibt die Verzeichnisse an, in denen benutzerdefinierte Fahrzeugdefinitionen abgelegt sind. Es können mehrere Verzeichnisse angegeben werden. Diese werden durch ein Semikolon getrennt. Default: leer
 
-aaa
-
-### Benutzerfahrzeuge
-*User vehicle packages*
-
-aaa
 
 ### Karteneinstellungen
 *Minimum speed, Auto map movement, Min. border distance und Border distance units*
