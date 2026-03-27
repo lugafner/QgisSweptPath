@@ -168,9 +168,11 @@ Es kann ein absoluter oder relativer Pfad (relativ zum Plugin-Verzeichnis) zu ei
 
 
 ### Karteneinstellungen
-*Minimum speed, Auto map movement, Min. border distance und Border distance units*
-
-aaa
+- **Minimum speed**: Gibt die minimale Fahrgeschwindigkeit an. Unter dieser Geschwindigkeit wird das Fahrzeug angehalten. Default: 0.01
+- **Auto map movement**: Gibt an, ob die Karte automatisch mit dem Fahrzeug mitbewegt werden soll (siehe auch die zwei folgenden Parameter). Default: True
+- **Min. border distance**: Gibt die minimale Distanz zum Kartenrand an, bevor die Karte mitbewegt wird. Die Einheit wird mit dem Parameter **Border distance units** definiert. Default: 5
+- **Border distance units**: Gibt die Einheit für die minimale Distanz zum Kartenrand an. Es kann zwischen Pixel und Karteneinheiten gewählt werden. Bei der Einstellung **Pixel** wird unabhängig des Kartenmasstabs immer der gleiche Abstand als grenze verwendet. 
+Bei **Karteneinheiten** erscheint der Abstand bei einem grossen Massstab grösser als bei einem kleinen Massstab. Default: Karteneinheiten
 
 ### Frame basierte Simulation
 *Frame based simulation,Frames, Acceleration/deceleration, Steering time, Key steer left, Key steer right, Key speed up und Key speed down*
