@@ -20,6 +20,8 @@
   - [Frame basierte simulation](#frame-basierte-simulation)
   - [Schritt basierte simulation](#schritt-basierte-simulation)
   - [Pfadbearbeitung](#pfadbearbeitung)
+- [Problembehandlung](#problembehandlung)
+- [Disclaimer](#disclaimer)
 
 ---
 
@@ -171,18 +173,27 @@ Es kann ein absoluter oder relativer Pfad (relativ zum Plugin-Verzeichnis) zu ei
 - **Minimum speed**: Gibt die minimale Fahrgeschwindigkeit an. Unter dieser Geschwindigkeit wird das Fahrzeug angehalten. Default: 0.01
 - **Auto map movement**: Gibt an, ob die Karte automatisch mit dem Fahrzeug mitbewegt werden soll (siehe auch die zwei folgenden Parameter). Default: True
 - **Min. border distance**: Gibt die minimale Distanz zum Kartenrand an, bevor die Karte mitbewegt wird. Die Einheit wird mit dem Parameter **Border distance units** definiert. Default: 5
-- **Border distance units**: Gibt die Einheit für die minimale Distanz zum Kartenrand an. Es kann zwischen Pixel und Karteneinheiten gewählt werden. Bei der Einstellung **Pixel** wird unabhängig des Kartenmasstabs immer der gleiche Abstand als grenze verwendet. 
-Bei **Karteneinheiten** erscheint der Abstand bei einem grossen Massstab grösser als bei einem kleinen Massstab. Default: Karteneinheiten
+- **Border distance units**: Gibt die Einheit für die minimale Distanz zum Kartenrand an. Es kann zwischen Pixel und Karteneinheiten gewählt werden. Bei der Einstellung **Pixel** wird unabhängig des Kartenmasstabs immer der gleiche Abstand als Grenze verwendet. 
+Bei **Karteneinheiten** erscheint der Abstand bei einem grossen Massstab grösser als bei einem kleinen Massstab. Default: Karteneinheiten. Default: Karteneinheiten
 
 ### Frame basierte Simulation
-*Frame based simulation,Frames, Acceleration/deceleration, Steering time, Key steer left, Key steer right, Key speed up und Key speed down*
+Bei der Frame basierten Simulation erfolgt die Simulation mit einer vordefinierten Framerate (Simulationsschritte pro Sekunde). Die Voraussetzung für diesen Simulationsmodus ist, dass die Hardwareleistung die Simulationsberechnungen im vorgegebenen Zeitintervall ausführen kann ([siehe Problembehandlung](#problembehandlung))
 
-aaa
+- **Frame based simulation**: Gibt an, ob die Simulation frame basiert ausgeführt werden soll. Default: True
+- **Frames**: Gibt die Anzahl Simulationsschritte pro Sekunde an. Default: 24
+- **Acceleration/deceleration**: Gibt den Wert für die Beschleunigung und Verzögerung in m/s² an. In der aktuellen Version können für Bremsen und Beschleunigen keine unterschiedlichen Werte definiert werden. Default: 2.5
+- **Steering time**: Gibt die Zeit in Sekunden an, die benötigt wird, um von einem maximalen Lenkwinkel zum anderen zu lenken. Darüber wird die Lenkgeschwindigkeit gesteuert. Default: 6
+- **Key steer left, Key steer right, Key speed up und Key speed down**: Tastenbelegung für die Steuerung der Simulation. In der aktuellen Version können nur einzelne Tasten definiert werden (keine Tastenkombinationen). Wichtig ist, dass sich diese Tasten nicht mit in den QGIS-Einstellungen hinterlegten Tasten überlagern. Default: J, L, I und K
 
 ### Schritt basierte Simulation
 *Step based simulation, Step distance, Speed change step und Steer change step*
 
-aaa
+Bei der Schritt basierten Simulation wird die Position des Fahrzeugs nach einer vordefinierten Distanz berechnet. Der Lenkwinkel und die Geschwindigkeit werden für jeden Schritt angewendet. Somit ist die Genauigkeit (d.h. die Auflösung der Simulation) von der Schrittdistanz abhängig. Je kleiner die Schrittdistanz, desto genauer wird das Ergebnis. Ander als beim Print interval der Frame basierten Simulation wird nicht nur die Darstellung, sondern auch die Simulationsgenauigkeit beeinflusst. Die Schritt basierte Simulation bietet einen Vorteil bei einer langsamen Hardwareleistung, da die Berechnungen nicht in einem vorgegebenen Zeitintervall ausgeführt werden müssen. Allerdings erfolgt bei tiefen Fahrgeschwindigkeiten die Steuerung ruckartig. Ein weiterer Vorteil ist, dass die Tastenbelegung über die QGIS-Einstellungen frei definiert werden kann.
+
+- **Step based simulation**: Gibt an, ob die Simulation schritt basiert ausgeführt werden soll. Default: False
+- **Step distance**: Gibt die Distanz in Karteneinheiten an, nach der die Position des Fahrzeugs berechnet wird. Default: 0.05
+- **Speed change step**: Gibt die Änderung der Geschwindigkeit in m/s an, die pro Tastendruck angewendet wird. Default: 0.01
+- **Steer change step**: Gibt die Änderung des Lenkwinkels in Grad an, die pro Tastendruck angewendet wird. Default: 0.5
 
 ### Pfadbearbeitung
 *Dissolve path und Dissolve by fields*
