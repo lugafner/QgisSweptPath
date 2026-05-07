@@ -25,9 +25,9 @@
 ---
 
 ## Einleitung
-Mit dem Plug-in **QgisSweptPath** können direkt im QGIS grobe Abklärungen zur Befahrbarkeit von Strassen, Knoten oder Haltestellen des öffentlichen Verkehrs durchgeführt werden. Dank der Integration in QGIS können als Hintergrund alle möglichen verfügbaren Geodaten verwendet werden, wie zum Beispiel Orthofotos, Daten der amtlichen Vermessung oder auch georeferenzierte PDF oder Bilder. Ausserdem kann die Darstellung der Schleppkurven wie alle QGIS-Layer beliebig angepasst, und die Geometrien weiter bearbeitet werden.
+Mit dem Plug-in **QgisSweptPath** können direkt im QGIS grobe Abklärungen zur Befahrbarkeit von Strassen, Knoten oder Haltestellen des öffentlichen Verkehrs durchgeführt werden. Dank der Integration in QGIS können als Hintergrund sämtliche Geodaten verwendet werden, wie zum Beispiel Orthofotos, Daten der amtlichen Vermessung oder auch georeferenzierte PDF oder Bilddateien. Ausserdem besteht die Möglichkeit, die generierten Schleppkurven wie normale QGIS-Layer weiterzubearbeiten oder die Darstellung anzupassen.
 
-Das Plug-in ist für schnelle Grobabklärungen konzipiert und erreicht nicht die Genauigkeit und Benutzerfreundlichkeit von CAD-basierten Tools für Ingenieure. Ausserdem ist das Tool insbesondere für Anwender geeignet, die für ihre Projekte ohnehin mit QGIS arbeiten und so kein zusätzliches Programm für die Schleppkurvensimulationen einsetzen müssen.
+Das Plug-in eignet sich für schnelle, grobe Abklärungen und erreicht nicht die Genauigkeit und Benutzerfreundlichkeit professioneller CAD-Tools für Ingenieure. Das Tool insbesondere für Anwender geeignet, die für ihre Projekte ohnehin QGIS verwenden und so kein zusätzliches Programm für die Schleppkurvensimulationen einsetzen müssen.
 
 QgisSweptPath ist ein reines Freizeitprojekt und wird von einzelnen Personen betreut und weiterentwickelt. Aus diesem Grund gibt es keinen Support für Anwender. Falls Sie aber Fehler entdecken, oder sich bei der Weiterentwicklung einbringen möchten, können Sie ihr Anliegen gerne im offiziellen [Github-Repository](https://github.com/lugafner/QgisSweptPath) als [Issue](https://github.com/lugafner/QgisSweptPath/issues) erfassen.
 
@@ -111,7 +111,7 @@ ID des Kartenlayers zur Darstellung und Speicherung des generierten Pfads (Ergeb
 
 
 ### Layerdarstellung
-- **Default vehicle layer style und Default path layer style** definiieren die Standardstile für die Fahrzeug- und Pfadlayer. Diese Stile werden automatisch zugewiesen, wenn ein neuer Layer über die Schaltflächen auf der Hauptseite erstellt wird. Es kann ein absoluter oder relativer Pfad (relativ zum Plugin-Verzeichnis) zu einem QGIS-Style (.qml) angegeben werden.  Default: ./style/vehicle.qml & ./style/path.qml 
+- **Default vehicle layer style und Default path layer style** definiieren die Standardstile für die Fahrzeug- und Pfadlayer. Diese Stile werden automatisch zugewiesen, wenn ein neuer Layer über die Schaltflächen auf der Hauptseite erstellt wird. Es kann ein absoluter oder relativer Pfad (relativ zum Plugin-Verzeichnis) zu einer QGIS-Style-Datei (.qml) angegeben werden.  Default: ./style/vehicle.qml & ./style/path.qml 
 - **Reload Vehicle Layer Style und Reload Path Layer Style** laden die Standardstile vom Dateisystem und weisen sie neu zu.
 - **User vehicle packages** gibt die Verzeichnisse an, in denen benutzerdefinierte Fahrzeugdefinitionen abgelegt sind. Es können mehrere Verzeichnisse angegeben werden. Diese werden durch ein Semikolon getrennt. Default: leer
 
@@ -120,7 +120,7 @@ ID des Kartenlayers zur Darstellung und Speicherung des generierten Pfads (Ergeb
 - **Minimum speed**: Gibt die minimale Fahrgeschwindigkeit an. Unter dieser Geschwindigkeit wird das Fahrzeug angehalten. Default: 0.01
 - **Auto map movement**: Gibt an, ob die Karte automatisch mit dem Fahrzeug mitbewegt werden soll (siehe auch die zwei folgenden Parameter). Default: True
 - **Min. border distance**: Gibt die Distanz zum Kartenrand an, bei welchem die Karte mitbewegt wird. Die Einheit wird mit dem Parameter **Border distance units** definiert. Default: 5
-- **Border distance units**: Gibt die Einheit für die minimale Distanz zum Kartenrand an. Es kann zwischen Pixel und Karteneinheiten gewählt werden. Bei der Einstellung **Pixel** wird unabhängig des Kartenmasstabs immer der gleiche Abstand als Grenze verwendet.  Bei **Karteneinheiten** erscheint der Abstand bei einem grossen Massstab grösser als bei einem kleinen Massstab. Default: Karteneinheiten.
+- **Border distance units**: Gibt die Einheit für die minimale Distanz zum Kartenrand an. Es kann zwischen Pixel und Karteneinheiten gewählt werden. Bei **Pixel** ist der Abstand unabhängig vom Kartenmassstab immer gleich gross. Bei **Karteneinheiten** passt sich der Abstand dem aktuellen Kartenmassstab an, sodass er bei grossen Massstäben grösser erscheint als bei kleinen. Default: Karteneinheiten.
 
 ### Frame basierte Simulation
 Bei der Frame basierten Simulation erfolgt die Simulation mit einer vordefinierten Framerate (Simulationsschritte pro Sekunde). Die Voraussetzung für diesen Simulationsmodus ist, dass die Hardwareleistung die Simulationsberechnungen im vorgegebenen Zeitintervall ausführen kann ([siehe Problembehandlung](#problembehandlung))
@@ -134,7 +134,7 @@ Bei der Frame basierten Simulation erfolgt die Simulation mit einer vordefiniert
 ### Schritt basierte Simulation
 *Step based simulation, Step distance, Speed change step und Steer change step*
 
-Bei der Schritt basierten Simulation wird die Position des Fahrzeugs nach einer vordefinierten Distanz berechnet. Der Lenkwinkel und die Geschwindigkeit werden für jeden Schritt angewendet. Somit ist die Genauigkeit (d.h. die Auflösung der Simulation) von der Schrittdistanz abhängig. Je kleiner die Schrittdistanz, desto genauer wird das Ergebnis. Anders als beim Print interval der Frame basierten Simulation wird nicht nur die Darstellung, sondern auch die Simulationsgenauigkeit beeinflusst. Die Schritt basierte Simulation bietet einen Vorteil bei einer niedrigen Hardwareleistung, da die Berechnungen nicht in einem vorgegebenen Zeitintervall ausgeführt werden müssen. Allerdings erfolgt bei tiefen Fahrgeschwindigkeiten die Steuerung ruckartig. Ein weiterer Vorteil ist, dass die Tastenbelegung über die QGIS-Einstellungen definiert werden kann.
+Bei der Schritt basierten Simulation wird die Position des Fahrzeugs nach einer vordefinierten Distanz berechnet. Der Lenkwinkel und die Geschwindigkeit werden für jeden Schritt angewendet. Somit ist die Genauigkeit (d.h. die Auflösung der Simulation) von der Schrittdistanz abhängig. Je kleiner die Schrittdistanz, desto genauer wird das Ergebnis. Anders als beim Print interval der Frame basierten Simulation wird nicht nur die Darstellung, sondern auch die Simulationsgenauigkeit beeinflusst. Die Schritt basierte Simulation ist vorteilhaft bei begrenzter Hardwareleistung. Allerdings erfolgt die Steuerung bei langsamen Geschwindigkeiten und grossen Simulationsschritten ruckartig. Ein weiterer Vorteil ist, dass die Tastenbelegung über die QGIS-Einstellungen definiert werden kann.
 
 - **Step based simulation**: Gibt an, ob die Simulation Schritt basiert ausgeführt werden soll. Default: False
 - **Step distance**: Gibt die Distanz in Karteneinheiten an, nach der die Position des Fahrzeugs berechnet wird. Default: 0.05
