@@ -20,6 +20,7 @@
   - [Schritt basierte simulation](#schritt-basierte-simulation)
   - [Pfadbearbeitung](#pfadbearbeitung)
 - [Problembehandlung](#problembehandlung)
+- [Infos für QGIS 4 Nutzer](#infos-für-qgis-4-nutzer)
 - [Disclaimer](#disclaimer)
 
 ---
@@ -156,6 +157,10 @@ Funktionen in Version 0.1.0 noch nicht verfügbar.
   - Fahrgeschwindigkeit reduzieren
   - Schrittdistanz erhöhen ([siehe Schritt basierte Simulation](#schritt-basierte-simulation))
 
+---
+
+## Infos für QGIS 4 Nutzer
+Die aktuelle Version 0.1.0 des QgisSweptPath-Plungins ist für QGIS 3 entwickelt und wurde mit QGIS 3.44 LTR getestet. Eine Aktualisierung auf QT6 und damit die Kompatibilität mit QGIS 4 ist mit dem kommenden Release 1.0.0 geplant. 
 
 ---
 
