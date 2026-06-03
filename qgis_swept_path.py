@@ -186,7 +186,8 @@ class QgisSweptPath:
 
         Try to load the layers (vehicle and path) from the stored ids in the project settings
         If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
-        (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
+        (layer deleted since last run) a new vehicle layer is created and the id is saved in the project.
+        A new path layer is never generated automatically, to avoid automatic show up of layer save dialog.
         """
         self.setupVehicleLayer()
         self.setupPathLayer()
@@ -711,6 +712,9 @@ class QgisSweptPath:
         # Set default style
         self._set_default_vehicle_layer_style()
 
+        # Lock vehicle layer
+        self.dockwidget.chbVehicleLayer.setChecked(True)
+
 
     def _create_path_layer(self):
         """
@@ -787,6 +791,9 @@ class QgisSweptPath:
                 "Path layer could not be saved to file. Only a memory layer is created. All geometries will be lost"
                 "when the project is closed. The created layer must be saved manually",
             )
+
+        # Lock path layer
+        self.dockwidget.chbPathLayer.setChecked(True)
 
 
     def _set_default_path_layer_style(self):
