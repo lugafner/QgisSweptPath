@@ -550,6 +550,7 @@ class QgisSweptPath:
     def _reset_vehicle(self):
         # Uncheck vehicle status and delete vehicle
         self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
         self._disconnect_vehicle_signals()
         self.vehicle = None
 
