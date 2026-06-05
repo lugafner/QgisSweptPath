@@ -20,8 +20,8 @@ class MercedesCitaro(Vehicle):
         self._rear_axle_ref_pos = 8.705  # meter from front
         self._axle_with = 2.40  # meter incl. tires. ZF RL 82 EC
 
-        # Steering angle (inner 53 deg, outer 46 deg, mean 49.5 deg)
-        self._max_steering_angle = 49.3 / 180 * math.pi  # In radians
+        # Turning circle diameter
+        self._turning_circle: float = 19.16 # meter
 
         # Trailer and vehicle hierarchy
         self.trailer = None  # solo bus
@@ -48,3 +48,6 @@ class MercedesCitaro(Vehicle):
 
         # Setup vehicle shape
         self._init_vehicle_shape()
+
+    def _calc_max_steering_angle(self) -> float:
+        return math.radians(46.753)

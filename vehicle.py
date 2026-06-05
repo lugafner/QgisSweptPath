@@ -33,9 +33,9 @@ class Vehicle(QObject):
         self._front_axle_ref_pos: float = 3.10  # meter from front
         self._rear_axle_ref_pos: float = 11.65  # meter from front
         self._axle_with: float = 2.50  # meter incl. tires
-        # Steering angle  (i.e. 49 deg)
-        self._max_steering_angle: float = 49.0 / 180 * math.pi  # In radians
-        
+        # Turning circle diameter (only used for calculating the max steering angle)
+        self._turning_circle: float = 19.16 # meter
+
         # Trailer and vehicle hierarchy
         self._trailer: Optional[Vehicle] = None
         """Create trailer object here, if the vehicle has a trailer. Set to None, if the vehicle has no trailer"""
@@ -119,6 +119,9 @@ class Vehicle(QObject):
             self._local_point_fwlb: PolarCoord = CoordUtils.to_polar(0.0, body_side_offset)
             self._local_point_fwrb: PolarCoord = CoordUtils.to_polar(0.0, - body_side_offset)
 
+        # Get de maximum steering angle
+        self._max_steering_angle: float = self._calc_max_steering_angle() # in radians
+
 
     def _update_vehicle_parts(self):
         """
@@ -131,6 +134,21 @@ class Vehicle(QObject):
             while child_vehicle is not None:
                 self._vehicle_parts.append(child_vehicle)
                 child_vehicle = child_vehicle._trailer
+
+    def _calc_max_steering_angle(self) -> float:
+        """
+        Calculate the max steering angle based on the turning circle and the wheelbase
+        The steering angle is defined for the single-track model
+        For other max steering angle overwrite this method in the child vehicle class
+
+        @return: Max steering angle in radians
+        """
+        outer_steering_angle: float = math.acos(self._wheelbase / (self._turning_circle * 0.5))
+        outer_rear_to_center: float = math.sin(outer_steering_angle) * self._turning_circle * 0.5
+        base_rear_to_center: float = outer_rear_to_center - self._wheel_side_offset
+        max_angle: float = math.atan(base_rear_to_center / self._wheelbase)
+
+        return max_angle
 
 
     def _calc_azimuth(self) -> float:
