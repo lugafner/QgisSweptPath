@@ -251,6 +251,9 @@ class Vehicle(QObject):
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
+    def _get_driving_vector_rear(self, distance: float) -> PolarCoord:
+
+
 
     def _drive(self, distance: float):
         """
@@ -258,12 +261,17 @@ class Vehicle(QObject):
         """
         if abs(self._steering_angle) > 0.0:
             front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front(distance)
+            rear_wheel_driving_vector: PolarCoord = self._get_driving_vector_rear(distance)
         else:
             front_wheel_driving_vector = PolarCoord(distance, 0.0)
+            rear_wheel_driving_vector = PolarCoord(distance, 0.0)
 
         # Calculate the global point f
         # Recalculate a and the other global points h and cp
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
+        self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
+        # Recalculate a and the other global points h and cp
+        # h must be recalculated to avoid rounding errors in the vehicle
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_h)
         self._global_cp = self._calc_global_coord(self._local_point_cp)
