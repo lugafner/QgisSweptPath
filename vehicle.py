@@ -16,6 +16,8 @@ class Vehicle(QObject):
     """Name of vehicle. Will be shown in combo box for vehicle selection"""
     is_main_vehicle: bool = False
     """Set as main vehicle or just as trailer part. Only main vehicles are shown for vehicle selection"""
+    is_active: bool = True
+    """Make vehicle active (true) or inactive(false). Only active vehicles are shown for vehicle selection"""
 
     # QT Signals
     pauseSimulation: pyqtSignal = pyqtSignal(VehicleStatus, name="pauseSimulation")
