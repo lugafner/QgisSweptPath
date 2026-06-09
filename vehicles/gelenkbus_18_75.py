@@ -7,6 +7,7 @@ import math
 class Gelenkbus1875(Vehicle):
     vehicle_name = "Gelenkbus 18.75m"
     is_main_vehicle = True
+    is_active = False  # Experimental vehicle. Rear wheel steering not implemented yet
 
     def __init__(self):
         super().__init__()
@@ -22,8 +23,8 @@ class Gelenkbus1875(Vehicle):
         self._rear_axle_ref_pos = 8.70  # meter from front
         self._axle_with = 2.55  # meter incl. tires
 
-        # Steering angle (inner 53 deg, outer 46 deg, mean 49.5 deg). Based on Mercedes Citaro
-        self._max_steering_angle = 49.5 / 180 * math.pi  # In radians
+        # Turning circle diameter
+        self._turning_circle: float = 19.9 # meter
 
         # Trailer and vehicle hierarchy
         self.trailer = Gelenkbus1875Trailer()  # Trailer. Always use setter of property
