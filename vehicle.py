@@ -146,7 +146,7 @@ class Vehicle(QObject):
         outer_steering_angle: float = math.acos(self._wheelbase / (self._turning_circle * 0.5))
         outer_rear_to_center: float = math.sin(outer_steering_angle) * self._turning_circle * 0.5
         base_rear_to_center: float = outer_rear_to_center - self._wheel_side_offset
-        max_angle: float = math.atan(base_rear_to_center / self._wheelbase)
+        max_angle: float = (math.pi * 0.5) - (math.atan(base_rear_to_center / self._wheelbase))
 
         return max_angle
 
