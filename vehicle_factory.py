@@ -55,8 +55,8 @@ class VehicleFactory:
         for module in modules:
             # Loop over all members of each module
             for name, cls in inspect.getmembers(module):
-                # Get only the classes with the class attribute is_main_vehicle set to True
-                if inspect.isclass(cls) and cls.is_main_vehicle:
+                # Get only the classes with the class attribute is_main_vehicle set to True and is_active set to True
+                if inspect.isclass(cls) and cls.is_main_vehicle and cls.is_active:
                     # Add the infos to the dict
                     class_dict[cls.vehicle_name] = (cls.__name__, module.__name__)
 

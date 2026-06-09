@@ -193,7 +193,8 @@ class QgisSweptPath:
 
         Try to load the layers (vehicle and path) from the stored ids in the project settings
         If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
-        (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
+        (layer deleted since last run) a new vehicle layer is created and the id is saved in the project.
+        A new path layer is never generated automatically, to avoid automatic show up of layer save dialog.
         """
         self.setupVehicleLayer()
         self.setupPathLayer()
@@ -446,8 +447,8 @@ class QgisSweptPath:
             v.ignore_bending_angle = False
 
         # Update buttons text and status
+        self._show_buttons()
         self.dockwidget.btnStartStopSimulation.setText("START")
-        self.dockwidget.btnShowProperties.setEnabled(True)
         self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
         self.dockwidget.btnPauseResumeSimulation.setEnabled(False)
 
@@ -465,8 +466,8 @@ class QgisSweptPath:
         # The vehicle must first be created manually and be placed
         if self.vehicle is not None and self.vehicle.is_placed:
             # Update buttons text and status
+            self._hide_buttons()
             self.dockwidget.btnStartStopSimulation.setText("STOP")
-            self.dockwidget.btnShowProperties.setEnabled(False)
             self.dockwidget.btnPauseResumeSimulation.setEnabled(True)
 
             # Checks if print path is set to true
@@ -557,12 +558,14 @@ class QgisSweptPath:
     def _reset_vehicle(self):
         # Uncheck vehicle status and delete vehicle
         self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
         self._disconnect_vehicle_signals()
         self.vehicle = None
 
 
     def _setup_vehicle(self):
         self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
         self._vehicle_features.clear()
         selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
         vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
@@ -718,6 +721,9 @@ class QgisSweptPath:
         # Set default style
         self._set_default_vehicle_layer_style()
 
+        # Lock vehicle layer
+        self.dockwidget.chbVehicleLayer.setChecked(True)
+
 
     def _create_path_layer(self):
         """
@@ -795,6 +801,9 @@ class QgisSweptPath:
                 "when the project is closed. The created layer must be saved manually",
             )
 
+        # Lock path layer
+        self.dockwidget.chbPathLayer.setChecked(True)
+
 
     def _set_default_path_layer_style(self):
         # Set default style for path layer
@@ -871,3 +880,37 @@ class QgisSweptPath:
 
     def _show_properties(self):
         self.prop.show()
+
+
+    def _hide_buttons(self):
+        """
+        Hide all the not needed buttons during simulation
+        """
+        self.dockwidget.btnShowProperties.setEnabled(False)
+        self.dockwidget.btnAddVehicleLayer.setEnabled(False)
+        self.dockwidget.btnAddPathLayer.setEnabled(False)
+        self.dockwidget.btnCreateVehicle.setEnabled(False)
+        self.dockwidget.btnPlaceVehicle.setEnabled(False)
+        self.dockwidget.btnReloadVehicleList.setEnabled(False)
+        self.dockwidget.chbCreateVehicle.setEnabled(False)
+        self.dockwidget.chbPlaceVehicle.setEnabled(False)
+        self.dockwidget.chbVehicleLayer.setEnabled(False)
+        self.dockwidget.chbPathLayer.setEnabled(False)
+        self.dockwidget.cmboVehicleSelect.setEnabled(False)
+
+
+    def _show_buttons(self):
+        """
+        Shows all buttons after the simulation has stopped
+        """
+        self.dockwidget.btnShowProperties.setEnabled(True)
+        self.dockwidget.btnAddVehicleLayer.setEnabled(True)
+        self.dockwidget.btnAddPathLayer.setEnabled(True)
+        self.dockwidget.btnCreateVehicle.setEnabled(True)
+        self.dockwidget.btnPlaceVehicle.setEnabled(True)
+        self.dockwidget.btnReloadVehicleList.setEnabled(True)
+        self.dockwidget.chbCreateVehicle.setEnabled(True)
+        self.dockwidget.chbPlaceVehicle.setEnabled(True)
+        self.dockwidget.chbVehicleLayer.setEnabled(True)
+        self.dockwidget.chbPathLayer.setEnabled(True)
+        self.dockwidget.cmboVehicleSelect.setEnabled(True)

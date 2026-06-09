@@ -19,9 +19,6 @@ class MercedesCitaroGTrailer(Vehicle):
         self._rear_axle_ref_pos = 3.379  # meter from front
         self._axle_with = 2.40  # meter incl. tires. ZF RL 82 EC
 
-        # Steering angle (inner 53 deg, outer 46 deg, mean 49.5 deg)
-        self._max_steering_angle = 0.0  # Not needed for trailer
-
         # Trailer and vehicle hierarchy
         self.trailer = None  # No trailer
         self._connection_point = -0.786  # meter from front (negative = point is in front of vehicle)
