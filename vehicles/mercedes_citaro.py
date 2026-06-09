@@ -50,4 +50,4 @@ class MercedesCitaro(Vehicle):
         self._init_vehicle_shape()
 
     def _calc_max_steering_angle(self) -> float:
-        return math.radians(46.753)
+        return math.radians(42.907)
