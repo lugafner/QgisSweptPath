@@ -7,6 +7,7 @@ import math
 class Gelenkbus1875(Vehicle):
     vehicle_name = "Gelenkbus 18.75m"
     is_main_vehicle = True
+    is_active = False  # Experimental vehicle. Rear wheel steering not implemented yet
 
     def __init__(self):
         super().__init__()
