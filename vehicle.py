@@ -252,8 +252,11 @@ class Vehicle(QObject):
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
     def _get_driving_vector_rear(self, distance: float) -> PolarCoord:
-
-
+        center_angle = self._get_center_angle(distance)
+        outer_angle = (math.pi - center_angle) / 2
+        driving_vector_angle = math.pi / 2 - outer_angle
+        driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
+        return PolarCoord(driving_vector_distance, driving_vector_angle)
 
     def _drive(self, distance: float):
         """
