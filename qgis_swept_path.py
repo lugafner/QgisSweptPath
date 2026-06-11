@@ -494,7 +494,17 @@ class QgisSweptPath:
             self._simulation_id = self.dockwidget.txtSimulationId.text()
 
         # The vehicle must first be created manually and be placed
-        if self.vehicle is not None and self.vehicle.is_placed:
+        if self.vehicle is None or not self.vehicle.is_placed:
+            self.iface.messageBar().pushMessage(
+                "Can't start simulation",
+                "The vehicle must first be created and placed",
+                level=Qgis.Critical)
+        elif self._path_layer is None:
+            self.iface.messageBar().pushMessage(
+                "Can't start simulation",
+                "No valid path layer available. Path layer must first be created or be set in the properties.",
+                level=Qgis.Critical)
+        else:
             # Update buttons text and status
             self._hide_buttons()
             self.dockwidget.btnStartStopSimulation.setText("STOP")
@@ -519,13 +529,6 @@ class QgisSweptPath:
                 self._update_map_extent()
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)
-
-        else:
-            self.iface.messageBar().pushMessage(
-                "Can't start simulation",
-                "The vehicle must first be created and placed",
-                level=Qgis.Critical
-            )
 
 
     def _pause_resume_simulation(self):
