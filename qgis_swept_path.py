@@ -53,12 +53,14 @@ class QgisSweptPath:
         # Save reference to the QGIS interface
         self.iface = iface
         self.canvas = iface.mapCanvas()
+        self.proj: QgsProject = QgsProject.instance()
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
 
         # Declare instance attributes
         self.actions = []
+        self.start_plugin_action = None
         self.menu = "QgisSweptPath"
         self.toolbar = self.iface.addToolBar('QgisSweptPath')
         self.toolbar.setObjectName('QgisSweptPath')
@@ -105,8 +107,9 @@ class QgisSweptPath:
                 # Setup Controls
                 self.setupControls()
 
-            # connect to provide cleanup on closing of dockwidget
+            # connect to provide cleanup on closing of dockwidget and on closing project
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+            self.proj.cleared.connect(self.closePlugin)
 
             # Signals
             self.dockwidget.btnStartStopSimulation.clicked.connect(self.startStopSimulation)
@@ -200,7 +203,7 @@ class QgisSweptPath:
             self._create_vehicle_layer()
         else:
             # Get the layer by the id
-            vehicle_layer = QgsProject.instance().mapLayer(self.prop.vehicle_layer_id)
+            vehicle_layer = self.proj.mapLayer(self.prop.vehicle_layer_id)
             if vehicle_layer is None:
                 # If the layer is not available create new layer
                 self.iface.messageBar().pushMessage(
@@ -224,7 +227,7 @@ class QgisSweptPath:
                 level=Qgis.Info
             )
         else:
-            path_layer = QgsProject.instance().mapLayer(self.prop.path_layer_id)
+            path_layer = self.proj.mapLayer(self.prop.path_layer_id)
             if path_layer is None:
                 self.iface.messageBar().pushMessage(
                     "Path layer not available",
@@ -296,31 +299,50 @@ class QgisSweptPath:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         icon_path = ":/plugins/qgis_swept_path/icon.png"
-        self.add_action(
+        self.start_plugin_action = self.add_action(
             text="QgisSweptPath",
             callback=self.run,
             icon_path=icon_path,
             enabled_flag=True,
             add_to_menu=True,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow(),
+            remove_on_close=False)  # Do not delete this action when the widget is closed
+
+
+    def closePlugin(self):
+        self.dockwidget.close()
 
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
-        # disconnects
+        # Stop simulation
         if self.simulator and self.simulator.simulation_running:
             self.stopSimulation()
+
+        # Remove the actions (the start_plugin_action will not be removed)
+        self.remove_actions()
+
+        # Disconnect signals
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
+        self.proj.cleared.disconnect(self.closePlugin)
+
+        # Delete the Qt objects
+        self.dockwidget.deleteLater()
+        self.dockwidget = None
+        self.prop.deleteLater()
+        self.prop = None
+        self.simulator.deleteLater()
+        self.simulator = None
+
+        # Set plugin inactive
         self.pluginIsActive = False
 
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginMenu('QgisSweptPath', action)
-            self.iface.removeToolBarIcon(action)
-            self.iface.unregisterMainWindowAction(action)
-            QgsGui.shortcutsManager().unregisterAction(action)
+        self.actions.append(self.start_plugin_action)  # Add the start plugin action to the list so it will be removed
+        self.remove_actions()
+        
         # remove the toolbar
         del self.toolbar
 
@@ -336,7 +358,8 @@ class QgisSweptPath:
         status_tip=None,
         whats_this=None,
         parent=None, 
-        shortcut=None):
+        shortcut=None,
+        remove_on_close=True):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -374,6 +397,9 @@ class QgisSweptPath:
         :param shortcut: Optional text for keyboard shortcut. Default None
         :type shortcut: str
 
+        :param remove_on_close: Flag indicating whether the action should be deleted on widget closed. Default True
+        :type remove_on_close: bool
+
         :returns: The action that was created. Note that the action is also
             added to self.actions list.
         :rtype: QAction
@@ -401,10 +427,22 @@ class QgisSweptPath:
         if shortcut is not None:
             self.iface.registerMainWindowAction(action, shortcut)
             QgsGui.shortcutsManager().registerAction(action)
-            
-        self.actions.append(action)
+
+        if remove_on_close:
+            self.actions.append(action)
 
         return action
+
+
+    def remove_actions(self):
+        """ Remove all actions/menu items in actions list """
+        for action in self.actions:
+            self.iface.removePluginMenu('QgisSweptPath', action)
+            self.iface.removeToolBarIcon(action)
+            self.iface.unregisterMainWindowAction(action)
+            QgsGui.shortcutsManager().unregisterAction(action)
+
+        self.actions = []
 
 
     def update_speed(self):
@@ -691,7 +729,7 @@ class QgisSweptPath:
 
         # Create new vector layer and set Crs to project crs
         self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
-        crs = QgsProject.instance().crs()
+        crs = self.proj.crs()
         self._vehicle_layer.setCrs(crs)
 
         # Add the attributes
@@ -705,7 +743,7 @@ class QgisSweptPath:
         self._vehicle_layer.updateFields()
 
         # Add layer as new map layer
-        QgsProject.instance().addMapLayer(self._vehicle_layer)
+        self.proj.addMapLayer(self._vehicle_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_vehicle_layer_id(self._vehicle_layer.id())
@@ -738,7 +776,7 @@ class QgisSweptPath:
             )
 
         self._path_layer = self.iface.addVectorLayer("LineString", "path", "memory")
-        crs = QgsProject.instance().crs()
+        crs = self.proj.crs()
         self._path_layer.setCrs(crs)
 
         # Add the attributes
@@ -750,7 +788,7 @@ class QgisSweptPath:
         self._path_layer.updateFields()
 
         # Add layer as new map layer
-        QgsProject.instance().addMapLayer(self._path_layer)
+        self.proj.addMapLayer(self._path_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_path_layer_id(self._path_layer.id())
@@ -764,7 +802,7 @@ class QgisSweptPath:
             # If dialog returns true
             save_options = QgsVectorFileWriter.SaveVectorOptions()  # Create save options
             save_options.layerName = save_dialog.layerName()  # Set layer name
-            transform_context = QgsProject.instance().transformContext()  # Transform context
+            transform_context = self.proj.transformContext()  # Transform context
             # Save layer to file
             writer_error = QgsVectorFileWriter.writeAsVectorFormatV3(self._path_layer,
                                                               save_dialog.fileName(),
