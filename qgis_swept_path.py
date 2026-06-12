@@ -631,16 +631,20 @@ class QgisSweptPath:
     def _place_vehicle(self):
         self.dockwidget.chbPlaceVehicle.setChecked(False)
         # Place the vehicle with the VehiclePlacer class
-        if self.vehicle is not None:
-            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
-            self._vehicle_placer.placed.connect(self._vehicle_placed)
-            self.canvas.setMapTool(self._vehicle_placer)
-        else:
+        if self._vehicle_layer is None:
+            self.iface.messageBar().pushMessage(
+                "Can't place vehicle",
+                "The vehicle layer must first be created or be set in the properties",
+                level=Qgis.Critical)
+        elif self.vehicle is None:
             self.iface.messageBar().pushMessage(
                 "Can't place vehicle",
                 "The vehicle must first be created",
-                level=Qgis.Critical
-            )
+                level=Qgis.Critical)
+        else:
+            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
+            self._vehicle_placer.placed.connect(self._vehicle_placed)
+            self.canvas.setMapTool(self._vehicle_placer)
 
 
     def _vehicle_placed(self):
@@ -751,6 +755,9 @@ class QgisSweptPath:
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_vehicle_layer_id(self._vehicle_layer.id())
 
+        # Add signal for layer delete
+        self._vehicle_layer.willBeDeleted.connect(self._vehicle_layer_delete)
+
         # Set default style
         self._set_default_vehicle_layer_style()
 
@@ -795,7 +802,10 @@ class QgisSweptPath:
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_path_layer_id(self._path_layer.id())
-        
+
+        # Add signal for layer delete
+        self._path_layer.willBeDeleted.connect(self._path_layer_delete)
+
         # Set default style
         self._set_default_path_layer_style()
 
@@ -888,6 +898,27 @@ class QgisSweptPath:
         if self.dockwidget.chbPathLayer.isChecked():
             self.dockwidget.chbPathLayer.setChecked(False)
             self.setupPathLayer()
+
+    def _vehicle_layer_delete(self):
+        self.dockwidget.chbVehicleLayer.setChecked(False)
+        self.prop.set_vehicle_layer_id("")
+        self._vehicle_layer.willBeDeleted.disconnect(self._vehicle_layer_delete)
+        self._vehicle_layer = None
+        self.iface.messageBar().pushMessage(
+            "Vehicle layer deleted",
+            "Before start a new simulation a new vehicle layer must be created or be set in the properties",
+            level=Qgis.Info)
+
+
+    def _path_layer_delete(self):
+        self.dockwidget.chbPathLayer.setChecked(False)
+        self.prop.set_path_layer_id("")
+        self._path_layer.willBeDeleted.disconnect(self._path_layer_delete)
+        self._path_layer = None
+        self.iface.messageBar().pushMessage(
+            "Path layer deleted",
+            "Before start a new simulation a new path layer must be created or be set in the properties",
+            level=Qgis.Info)
 
 
     def _update_map_extent(self):
