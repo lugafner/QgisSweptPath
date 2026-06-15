@@ -1,13 +1,13 @@
-# <img src="../icon.png" width=60/> QgisSweptPath
+# <img src="./img/icon.png" width=60/> QgisSweptPath
 
-[![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](../LICENSE)
+[![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](https://github.com/lugafner/QgisSweptPath/blob/develop/LICENSE)
 
 #### EN
 QgisSweptPath is a plug-in for the open source GIS software QGIS for simple sweep curve checks.
 The plug-in is primarily suitable for rough feasibility studies and does not claim to achieve the accuracy and depth of analysis
 of professional sweep curve simulation programmes for CAD systems.
 
-For some examples see the page: [Showcase](showcase.md)
+For some examples see the page: [Showcase](showcase)
 
 During the development of the plug-in, care is taken to ensure that the sweep paths correspond as closely as possible to real vehicles
 and the simulation results are checked to the best of our knowledge and belief. Nevertheless, it cannot be guaranteed that
@@ -23,7 +23,7 @@ QgisSweptPath ist ein Plug-in für die Open-Source-GIS-Software QGIS für einfac
 Das Plug-in ist vor allem für grobe Machbarkeitsabklärungen geeignet und hat nicht den Anspruch die Genauigkeit und Abklärungstiefe
 von professionellen Schleppkurvensimulationsprogrammen für CAD-Systeme zu erreichen.
 
-Für ein paar Anwendungsbeispiele siehe Seite: [Showcase](showcase.md)
+Für ein paar Anwendungsbeispiele siehe Seite: [Showcase](showcase)
 
 Bei der Entwicklung des Plug-ins wird darauf geachtet, dass die Schleppkurven möglichst den realen Fahrzeugen entsprechen
 und die Simulationsergebnisse werden nach bestem Wissen und Gewissen geprüft. Dennoch kann nicht gewährleistet werden, dass
@@ -35,6 +35,13 @@ Für die Entwickler von QgisSweptPath, Lukas Gafner
 
 ---
 
-[![Static Badge](https://img.shields.io/badge/Benutzerhandbuch-DE-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](qgissweptpath_de.md)
+<video width="100%" controls>
+  <source src="https://lugafner.github.io/QgisSweptPath/img/RefImg_SweptPath.mp4" type="video/mp4">
+</video>
+
+
+---
+
+[![Static Badge](https://img.shields.io/badge/Benutzerhandbuch-DE-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](qgissweptpath_de)
 ![Static Badge](https://img.shields.io/badge/User%20manual-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)
 ![Static Badge](https://img.shields.io/badge/Developer%20guide-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)

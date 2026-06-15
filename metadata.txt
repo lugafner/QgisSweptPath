@@ -1,7 +1,11 @@
 [general]
 name=QgisSweptPath
 qgisMinimumVersion=3.0
+qgisMaximumVersion=3.44
 description=Swept Path simulation with qgis
+about=QgisSweptPath is a plug-in for the open source GIS software QGIS for simple sweep curve checks. The plug-in is primarily suitable for rough feasibility studies.
 version=0.1
 author=Lukas Gafner
 email=lugafner@proton.me
+repository=https://github.com/lugafner/QgisSweptPath
+tracker=https://github.com/lugafner/QgisSweptPath/issues

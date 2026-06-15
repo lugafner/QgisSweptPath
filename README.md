@@ -1,4 +1,4 @@
-# <img src="icon.png" width=50/> QgisSweptPath
+# <img src="./icon.png" width=50/> QgisSweptPath
 
 [![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](LICENSE)
 
@@ -40,6 +40,6 @@ More information on the development progress and planned features can be found d
 
 ---
 
-[![Static Badge](https://img.shields.io/badge/Benutzerhandbuch-DE-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](qgissweptpath_de.md)
+[![Static Badge](https://img.shields.io/badge/Benutzerhandbuch-DE-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](docs/qgissweptpath_de.md)
 ![Static Badge](https://img.shields.io/badge/User%20manual-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)
 ![Static Badge](https://img.shields.io/badge/Developer%20guide-EN-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)
