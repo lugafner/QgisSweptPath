@@ -64,7 +64,7 @@ Beim Pfadlayer kann es vorkommen, dass ein bereits vorhandener Layer verwendet w
 
 ### Fahrzeug auswählen
 In der Auswahlbox unter den Schaltflächen für die Layererstellung kann das zu simulierende Fahrzeug ausgewählt werden. Standardmässig stehen dort alle mitgelieferten Fahrzeugtypen zur Auswahl. Diese Fahrzeugdefinitionen sind im Installationserzeichnis angelegt. QgisSweptPath bietet auch die Möglichkeit Fahrzeuge aus einem benutzerdefinierten Verzeichnis zu laden. Dazu muss das entsprechende Verzeichnis in den Einstellungen angegeben werden [siehe Benutzerfahrzeuge unter Layerdarstellung](#layerdarstellung). Die Details
-zur Erstellung von benutzerdefinierten Fahrzeugen werden in der [Entwicklerdokumentation]() beschrieben (coming soon).
+zur Erstellung von benutzerdefinierten Fahrzeugen werden in der [Entwicklerdokumentation](#) beschrieben (coming soon).
 
 Nachdem das Fahrzeug ausgewählt wurde, muss das Fahrzeug erstellt werden. Dazu muss die Schaltfläche **Create Vehicle** betätigt werden. Die Aktion wird mit dem Haken rechts der Schaltfläche bestätigt. Wird für einen nächsten Simulationsdurchgang ein anderes Fahrzeug verwendet, kann dieses aus der Liste ausgewählt werden und ebenfalls mit der Schaltfläche erstellt werden. 
 

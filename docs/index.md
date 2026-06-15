@@ -1,4 +1,4 @@
-# <img src="../icon.png" width=60/> QgisSweptPath
+# <img src="./icon.png" width=60/> QgisSweptPath
 
 [![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](https://github.com/lugafner/QgisSweptPath/blob/develop/LICENSE)
 
@@ -35,7 +35,10 @@ Für die Entwickler von QgisSweptPath, Lukas Gafner
 
 ---
 
-https://lugafner.github.io/QgisSweptPath/img/RefImg_SweptPath.mp4
+<video width="100%" controls>
+  <source src="https://lugafner.github.io/QgisSweptPath/img/RefImg_SweptPath.mp4" type="video/mp4">
+</video>
+
 
 ---
 
