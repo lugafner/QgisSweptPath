@@ -1,4 +1,4 @@
-# <img src="icon.png" width=50/> QgisSweptPath
+# <img src="./img/icon.png" width=50/> QgisSweptPath
 
 [![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](LICENSE)
 

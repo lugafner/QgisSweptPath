@@ -41,12 +41,12 @@ In der aktuellen Version 0.1.0 ist das Plugin noch nicht über das Plugin-Reposi
 
 Danach kann im Plugin-Manager von QGIS über **Aus ZIP Datei installieren** die heruntergeladene Datei ausgewählt werden. Das Plugin wird danach im QGIS Benutzerverzeichnis im Plugin-Ordner installiert. Sofern nicht automatisch geschehen muss danach in der Liste der installierten Plugins der Haken vor **QgisSweptPath** gesetzt werden.
 
-![Install From Zip](./img/PluginsDialog_InstallFromZip.png)
+![Install From Zip](img/PluginsDialog_InstallFromZip.png)
 
 ### QgisSweptPath starten
 QgisSweptPath wird beim Öffnen eines Projekts nicht automatisch gestartet. Das Plugin kann unter dem Menüpunkt **Plugins** - **QgisSweptPath** - **QgisSweptPath** geöffnet werden. Das Dock-Widget wird unten rechts angedockt.
 
-![Dock widget initialised](./img/DockWidget_Initialised.png)
+![Dock widget initialised](img/DockWidget_Initialised.png)
 
 ### Fahrzeug- und Pfadlayer erstellen
 Bevor QgisSweptPath das erste Mal verwendet werden kann, müssen zwei Layer erstellt werden: **Fahrzeuglayer** und **Pfadlayer**. Diese beiden Layer werden für die Darstellung des Fahrzeugs und die Generierung der Schleppkurven benötigt. Wurde das Plugin im gleichen QGIS-Projekt bereits verwendet, werden die Refernzen auf diese Layer beim Pluginstart automatisch geladen. Falls die Layer nicht mehr verfügbar sind, wird eine entsprechende Warnung angezeigt. Ansonsten können die folgenden beiden Schritte übersprungen werden.

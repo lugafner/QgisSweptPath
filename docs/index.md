@@ -1,6 +1,6 @@
 # <img src="../icon.png" width=60/> QgisSweptPath
 
-[![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](../LICENSE)
+[![Static Badge](https://img.shields.io/badge/LICENSE-GPLv3-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](https://github.com/lugafner/QgisSweptPath/blob/develop/LICENSE)
 
 #### EN
 QgisSweptPath is a plug-in for the open source GIS software QGIS for simple sweep curve checks.
