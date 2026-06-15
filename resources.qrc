@@ -1,5 +1,11 @@
 <RCC>
-    <qresource prefix="/plugins/qgis_swept_path" >
+    <qresource prefix="/plugins/qgis_swept_path">
         <file>icon.png</file>
+        <file>icon/pause_resume.png</file>
+        <file>icon/speed_down.png</file>
+        <file>icon/speed_up.png</file>
+        <file>icon/start_stop.png</file>
+        <file>icon/steer_left.png</file>
+        <file>icon/steer_right.png</file>
     </qresource>
 </RCC>

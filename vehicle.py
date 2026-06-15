@@ -2,15 +2,32 @@ import math
 import inspect
 
 from pathlib import Path
+from typing import Optional
 
+from qgis.PyQt.QtCore import QObject, pyqtSignal
+
+from .qgis_swept_path_enum import VehicleStatusAction, VehicleStatusType
 from .coord import PolarCoord, CartesianCoord, CoordUtils
+from .vehicle_status import VehicleStatus
 
 
-class Vehicle:
+class Vehicle(QObject):
+    vehicle_name: str = "Vehicle"
+    """Name of vehicle. Will be shown in combo box for vehicle selection"""
+    is_main_vehicle: bool = False
+    """Set as main vehicle or just as trailer part. Only main vehicles are shown for vehicle selection"""
+    is_active: bool = True
+    """Make vehicle active (true) or inactive(false). Only active vehicles are shown for vehicle selection"""
+
+    # QT Signals
+    pauseSimulation: pyqtSignal = pyqtSignal(VehicleStatus, name="pauseSimulation")
+    stopSimulation: pyqtSignal = pyqtSignal(VehicleStatus, name="stopSimulation")
+
+
     def __init__(self):
+        super().__init__(None)
         # **************************************************************************************************************
         # Vehicle input parameters. Setup for new vehicle extending this class
-        self._vehicle_name: str = "Vehicle"
         # Body
         self._body_length: float = 15.00  # meter
         self._body_width: float = 2.50  # meter
@@ -18,14 +35,15 @@ class Vehicle:
         self._front_axle_ref_pos: float = 3.10  # meter from front
         self._rear_axle_ref_pos: float = 11.65  # meter from front
         self._axle_with: float = 2.50  # meter incl. tires
-        # Steering angle  (i.e. 49 deg)
-        self._max_steering_angle: float = 49 / 180 * math.pi  # In radians
-        
+        # Turning circle diameter (only used for calculating the max steering angle)
+        self._turning_circle: float = 19.16 # meter
+
         # Trailer and vehicle hierarchy
-        self._is_main_vehicle: bool = True # True for standard vehicle
-        self._trailer: Vehicle = None  # Init with None for standard vehicle
+        self._trailer: Optional[Vehicle] = None
+        """Create trailer object here, if the vehicle has a trailer. Set to None, if the vehicle has no trailer"""
         # Connection point must always be initialised with a value
         self._connection_point: float = 11.65  # meter from front
+        self._max_trailer_angle: float = 54.0 / 180 * math.pi  # Maximum trailer angle in radians
         
         # Vehicle type (init with True for standard vehicle)
         self._has_body: bool = True  # When false, the vehicle has no axles and no body (i.e. drawbar)
@@ -33,7 +51,7 @@ class Vehicle:
         self._has_rear_axle: bool = True  # When false, no rear axle will be drawn
 
         # Graphics
-        self._symbol: str = "./vehicles/vehicle.svg"
+        self._symbol: str = ""  # Path to svg symbol relative to this file. Empty for generic vehicle
         self._symbol_size_x: float = 15.0 # SVG symbol size x in QGIS style units (usually meters)
         self._symbol_size_y: float = 2.5  # SVG symbol size y in QGIS style units (usually meters)
         # Offset to Place the symbol. Base point is point F.
@@ -55,6 +73,7 @@ class Vehicle:
         self._vehicle_is_placed: bool = False
         self._maximum_speed: float = 8.33
         self._vehicle_parts: list[Vehicle] = []  # All vehicle parts. Only used in main vehicle. Main vehicle is the first entry
+        self._ignore_bending_angle: bool = False  # Will be set to true, if the simulation is continued after reaching max angle
 
         # Update the vehicle parts list
         self._update_vehicle_parts()
@@ -102,18 +121,36 @@ class Vehicle:
             self._local_point_fwlb: PolarCoord = CoordUtils.to_polar(0.0, body_side_offset)
             self._local_point_fwrb: PolarCoord = CoordUtils.to_polar(0.0, - body_side_offset)
 
+        # Get de maximum steering angle
+        self._max_steering_angle: float = self._calc_max_steering_angle() # in radians
+
 
     def _update_vehicle_parts(self):
         """
         Updates the vehicle parts list when the vehicle is a main vehicle
         Method is only called when creating the vehicle and when a trailer is added
         """    
-        if self._is_main_vehicle:
+        if self.is_main_vehicle:
             self._vehicle_parts = [self]
             child_vehicle = self._trailer
             while child_vehicle is not None:
                 self._vehicle_parts.append(child_vehicle)
                 child_vehicle = child_vehicle._trailer
+
+    def _calc_max_steering_angle(self) -> float:
+        """
+        Calculate the max steering angle based on the turning circle and the wheelbase
+        The steering angle is defined for the single-track model
+        For other max steering angle overwrite this method in the child vehicle class
+
+        @return: Max steering angle in radians
+        """
+        outer_steering_angle: float = math.acos(self._wheelbase / (self._turning_circle * 0.5))
+        outer_rear_to_center: float = math.sin(outer_steering_angle) * self._turning_circle * 0.5
+        base_rear_to_center: float = outer_rear_to_center - self._wheel_side_offset
+        max_angle: float = (math.pi * 0.5) - (math.atan(base_rear_to_center / self._wheelbase))
+
+        return max_angle
 
 
     def _calc_azimuth(self) -> float:
@@ -131,7 +168,19 @@ class Vehicle:
 
         @return: Angle between vehicle and trailer (0.0 = straight) in radians
         """
-        return self._global_a - self._trailer._global_a
+
+        # Normalise global vehicle and trailer angles
+        vehicle_a = self._global_a - abs(int(self._global_a / math.pi * 2)) * math.pi * 2
+        trailer_a = self._trailer._global_a - abs(int(self._trailer._global_a / math.pi * 2)) * math.pi * 2
+
+        # Calculate angle difference between -180 and +180 deg
+        angle = vehicle_a - trailer_a
+        if angle < math.pi * -1:
+            angle += math.pi * 2
+        elif angle > math.pi:
+            angle -= math.pi * 2
+
+        return angle
 
 
     def _calc_global_coord(self, local_coord: PolarCoord, reference_point: CartesianCoord = None) -> CartesianCoord:
@@ -178,8 +227,8 @@ class Vehicle:
         Calculate the radius, on which the front wheel point (f) drives
         Can only be calculated when the wheels are turned
         """
-        print(self._wheelbase / math.sin(self._steering_angle))
         return float(self._wheelbase / math.sin(self._steering_angle))
+
 
     # Not used since rear wheel path is calculated on straight segments
     # Function kept for later use when simulating rear wheel steering
@@ -190,6 +239,7 @@ class Vehicle:
         """
         return float(self._wheelbase / math.tan(self._steering_angle))
 
+
     def _get_center_angle(self, distance: float) -> float:
         """
         Calculate the center angle of one step.
@@ -198,6 +248,7 @@ class Vehicle:
         """
         return float(distance) / self._get_front_wheel_radius()
 
+
     def _get_driving_vector_front(self, distance: float) -> PolarCoord:
         center_angle = self._get_center_angle(distance)
         outer_angle = (math.pi - center_angle) / 2
@@ -205,14 +256,14 @@ class Vehicle:
         driving_vector_distance = (self._get_front_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
 
-    # Not used since rear wheel path is calculated on straight segments
-    # Function kept for later use when simulating rear wheel steering
-    def _get_driving_vector_rear(self) -> PolarCoord:
-        center_angle = self._get_center_angle()
-        outer_angle = (math.pi  - center_angle) / 2
-        driving_vector_angle = (math.pi / 2) - outer_angle
+
+    def _get_driving_vector_rear(self, distance: float) -> PolarCoord:
+        center_angle = self._get_center_angle(distance)
+        outer_angle = (math.pi - center_angle) / 2
+        driving_vector_angle = math.pi / 2 - outer_angle
         driving_vector_distance = (self._get_rear_wheel_radius() * math.sin(center_angle)) / math.sin(outer_angle)
         return PolarCoord(driving_vector_distance, driving_vector_angle)
+
 
     def _drive(self, distance: float):
         """
@@ -220,19 +271,33 @@ class Vehicle:
         """
         if abs(self._steering_angle) > 0.0:
             front_wheel_driving_vector: PolarCoord = self._get_driving_vector_front(distance)
+            rear_wheel_driving_vector: PolarCoord = self._get_driving_vector_rear(distance)
         else:
             front_wheel_driving_vector = PolarCoord(distance, 0.0)
+            rear_wheel_driving_vector = PolarCoord(distance, 0.0)
 
         # Calculate the global point f
         # Recalculate a and the other global points h and cp
         self._global_f = self._calc_global_coord(front_wheel_driving_vector)
+        self._global_h = self._calc_global_coord(rear_wheel_driving_vector, self._global_h)
+        # Recalculate a and the other global points h and cp
+        # h must be recalculated to avoid rounding errors in the vehicle
         self._global_a = self._calc_azimuth()
         self._global_h = self._calc_global_coord(self._local_point_h)
         self._global_cp = self._calc_global_coord(self._local_point_cp)
 
         # Simulate trailer
         if self._trailer:
-            self._trailer.step_trailer(self._global_cp, self._trailer_angle)
+            self._trailer.step_trailer(self._global_cp, self._trailer_angle, distance)
+            # Check max trailer angle
+            if (not self._ignore_bending_angle) and abs(self._trailer_angle) > self._max_trailer_angle:
+                self.pauseSimulation.emit(VehicleStatus(
+                    self.vehicle_name,
+                    VehicleStatusAction.PAUSE,
+                    VehicleStatusType.MAX_ANGLE,
+                    "Max bending angle",
+                    "Bending angle of trailer reached maximum of {} deg".format(self._max_trailer_angle / math.pi * 180)
+                ))
 
 
     def step(self, distance: float):
@@ -240,8 +305,10 @@ class Vehicle:
         Calculates the next point based on current location and steering angle
         @param distance: Distance to drive with one step
         """
-        assert self._vehicle_is_placed, "Vehicle must be placed firs"
-        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        assert self._vehicle_is_placed, "Vehicle must be placed first"
+        if self._trailer:
+            self._trailer_angle = self._calc_angle_between_trailer()
+
         self._drive(distance)
 
 
@@ -258,7 +325,9 @@ class Vehicle:
         self._global_f = connection_point
         self._steering_angle = vehicle_angle
 
-        if self._trailer: self._trailer_angle = self._calc_angle_between_trailer()
+        if self._trailer:
+            self._trailer_angle = self._calc_angle_between_trailer()
+
         self._drive(distance)
 
 
@@ -501,14 +570,6 @@ class Vehicle:
         return self._has_rear_axle
 
     @property
-    def is_main_vehicle(self) -> bool:
-        """
-        Returns true, if the vehicle is the main vehicle
-        The main vehicle is the driven vehicle. This vehicle could tow a trailer
-        """
-        return self._is_main_vehicle
-
-    @property
     def is_placed(self) -> bool:
         """
         Returns true, if the vehicle is placed
@@ -516,8 +577,15 @@ class Vehicle:
         return self._vehicle_is_placed
 
     @property
-    def vehicle_name(self) -> str:
+    def ignore_bending_angle(self) -> bool:
         """
-        Returns the vehicle name
+        Returns true, if the max bending angle is ignored
         """
-        return self._vehicle_name
+        return self._ignore_bending_angle
+
+    @ignore_bending_angle.setter
+    def ignore_bending_angle(self, v: bool):
+        """
+        If true, the max bending angle is not monitored
+        """
+        self._ignore_bending_angle = v

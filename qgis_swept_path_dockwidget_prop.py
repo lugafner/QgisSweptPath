@@ -3,20 +3,26 @@ import os
 from typing import override
 
 from qgis.PyQt import uic
+from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
-from qgis.core import QgsSettings
+from qgis.core import QgsProject
 
-from .qgis_swept_path_enum import SimulationMode
+from .qgis_swept_path_enum import SimulationMode, BorderDistanceUnits
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'qgis_swept_path_dockwidget_prop.ui'))
 
 class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
+    # Signals
+    vehicleLayerChanged: pyqtSignal = pyqtSignal(name="VehicleLayerChanged")
+    pathLayerChanged: pyqtSignal = pyqtSignal(name="PathLayerChanged")
+
     def __init__(self, parent=None):
         """Constructor."""
         super(QgisSweptPathDockWidgetProp, self).__init__(parent)
         self.setupUi(self)
+        self.proj: QgsProject = QgsProject.instance()
 
         # Properties with default values
         self._frames: int = 24  # Frames per second for frame based simulation
@@ -29,9 +35,9 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._vehicle_layer_id: str = ""  # Layer id of vehicle layer
         self._path_layer_id: str = ""  # Layer id of path layer
         self._dissolve_path: bool = False  # Do or do not dissolve the paths
-        self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (comma separated)
-        self._speed_change_step: float = 0.03  # Steps to change speed in m/s per click (step based)
-        self._steer_change_step: float = 0.10  # Radians per click (step based)
+        self._dissolve_fields: str = ""  # String of fields to dissolve the paths by (semicolon separated)
+        self._speed_change_step: float = 0.05  # Steps to change speed in m/s per click (step based)
+        self._steer_change_step: float = 0.008  # Radians per click (step based)
         self._steering_time: float = 6.0  # Time in seconds for full left to full right (frame based)
         self._acceleration: float = 2.5  # Acceleration and deceleration in m/s2 (frame based)
         self._minimum_speed: float = 0.01  # Minimum speed before the vehicle stops
@@ -40,31 +46,45 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._key_steer_right: str = "L"  # Single key for steering right
         self._key_speed_up: str = "I"  # Single key for speed up
         self._key_speed_down: str = "K"  # Single key for speed down
+        self._vehicle_packages: str = ""  # String of additional directories with vehicle packages (semicolon separated)
+        self._border_distance_units: int = BorderDistanceUnits.MAP_UNITS.value  # Integer representation of distance units
+        self._auto_map_movement: bool = True  # Automatic map movement
+        self._border_distance: float = 10.0  # Minimal distance from border for automatic map movement (Units see above)
+
 
         # Dict with all property fields registered (k = field name, v = qgis property path)
         self._properties: dict[str, str] = {
-            "_frames": "qgissweptpath/frames",
-            "_step_distance": "qgissweptpath/step_distance",
-            "_print_path": "qgissweptpath/print_path",
-            "_print_interval": "qgissweptpath/print_interval",
-            "_print_distance": "qgissweptpath/print_distance",
-            "_vehicle_layer_style": "qgissweptpath/vehicle_layer_style",
-            "_path_layer_style": "qgissweptpath/path_layer_style",
-            "_vehicle_layer_id": "qgissweptpath/vehicle_layer_id",
-            "_path_layer_id": "qgissweptpath/path_layer_id",
-            "_dissolve_path": "qgissweptpath/dissolve_path",
-            "_dissolve_fields": "qgissweptpath/dissolve_fields",
-            "_speed_change_step": "qgissweptpath/speed_change_step",
-            "_steer_change_step": "qgissweptpath/steer_change_step",
-            "_steering_time": "qgissweptpath/steering_time",
-            "_acceleration": "qgissweptpath/acceleration",
-            "_minimum_speed": "qgissweptpath/minimum_speed",
-            "_simulation_mode": "qgissweptpath/simulation_mode",
-            "_key_steer_left": "qgissweptpath/key_steer_left",
-            "_key_steer_right": "qgissweptpath/key_steer_right",
-            "_key_speed_up": "qgissweptpath/key_speed_up",
-            "_key_speed_down": "qgissweptpath/key_speed_down"
+            "_frames": "frames",
+            "_step_distance": "step_distance",
+            "_print_path": "print_path",
+            "_print_interval": "print_interval",
+            "_print_distance": "print_distance",
+            "_vehicle_layer_style": "vehicle_layer_style",
+            "_path_layer_style": "path_layer_style",
+            "_vehicle_layer_id": "vehicle_layer_id",
+            "_path_layer_id": "path_layer_id",
+            "_dissolve_path": "dissolve_path",
+            "_dissolve_fields": "dissolve_fields",
+            "_speed_change_step": "speed_change_step",
+            "_steer_change_step": "steer_change_step",
+            "_steering_time": "steering_time",
+            "_acceleration": "acceleration",
+            "_minimum_speed": "minimum_speed",
+            "_simulation_mode": "simulation_mode",
+            "_key_steer_left": "key_steer_left",
+            "_key_steer_right": "key_steer_right",
+            "_key_speed_up": "key_speed_up",
+            "_key_speed_down": "key_speed_down",
+            "_vehicle_packages": "vehicle_packages",
+            "_border_distance_units": "border_distance_units",
+            "_auto_map_movement": "auto_map_movement",
+            "_border_distance": "border_distance"
         }
+
+        # Fields to store the information, if the layer ids were changed
+        # If the layer ids were changed, the signals are emitted on close
+        self._vehicle_layer_changed: bool = False
+        self._path_layer_changed: bool = False
 
         self._readProperties()  # Read the properties from QGIS project
         self._initGUI()  # Sets up slots
@@ -73,6 +93,15 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     @override
     def closeEvent(self, event):
         self._write_properties()
+
+        # Check if the layers are changed and emit the signal
+        if self._vehicle_layer_changed:
+            self._vehicle_layer_changed = False
+            self.vehicleLayerChanged.emit()
+        if self._path_layer_changed:
+            self._path_layer_changed = False
+            self.pathLayerChanged.emit()
+
         event.accept()
 
 
@@ -106,6 +135,17 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propKeySpeedDown.textEdited.connect(self._change_key_speed_down)
         self.propFrameBasedSimulation.clicked.connect(self._clicked_frame_based_simulation)
         self.propStepBasedSimulation.clicked.connect(self._clicked_step_based_simulation)
+        self.propVehiclePackages.textEdited.connect(self._change_vehicle_packages)
+        self.propVehicleLayerId.textEdited.connect(self._change_vehicle_layer_id)
+        self.propPathLayerId.textEdited.connect(self._change_path_layer_id)
+        self.propBorderDistance.valueChanged.connect(self._change_border_distance)
+        self.propAutoMapMovement.stateChanged.connect(self._change_auto_map_movement)
+        self.propDistanceMapUnits.clicked.connect(self._clicked_distance_map_units)
+        self.propDistancePixels.clicked.connect(self._clicked_distance_pixels)
+
+        # Layer id editing check boxes (no properties to be saved)
+        self.chbEditVehicleLayer.clicked.connect(self._clicked_edit_vehicle_layer)
+        self.chbEditPathLayer.clicked.connect(self._clicked_edit_path_layer)
 
 
     def _updateGUI(self):
@@ -132,6 +172,9 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self.propKeySteerRight.setText(self._key_steer_right)
         self.propKeySpeedUp.setText(self._key_speed_up)
         self.propKeySpeedDown.setText(self._key_speed_down)
+        self.propVehiclePackages.setText(self._vehicle_packages)
+        self.propBorderDistance.setValue(self._border_distance)
+        self.propAutoMapMovement.setChecked(self._auto_map_movement)
 
         if self._simulation_mode == SimulationMode.FRAME_BASED:
             self.propStepBasedSimulation.setChecked(False)
@@ -142,24 +185,57 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         else:
             raise Exception("Unknown property for simulation mode")
 
+        if self._border_distance_units == BorderDistanceUnits.MAP_UNITS:
+            self.propDistancePixels.setChecked(False)
+            self.propDistanceMapUnits.setChecked(True)
+        elif self._border_distance_units == BorderDistanceUnits.PIXELS:
+            self.propDistanceMapUnits.setChecked(False)
+            self.propDistancePixels.setChecked(True)
+        else:
+            raise Exception("Unknown property for border distance units")
+
 
     def _readProperties(self):
         """
         Read properties from QGIS project
         and load into the fields
         """
-        settings = QgsSettings()
         for k, v in self._properties.items():
-            setattr(self, k, settings.value(v, getattr(self, k), type=type(getattr(self, k))))
+            default_value = getattr(self, k)
+            if isinstance(default_value, str):
+                read_function = self.proj.readEntry
+            elif isinstance(default_value, int):
+                read_function = self.proj.readNumEntry
+            elif isinstance(default_value, float):
+                read_function = self.proj.readDoubleEntry
+            elif isinstance(default_value, bool):
+                read_function = self.proj.readBoolEntry
+            else:
+                continue
+
+            attr , type_conversion_ok = read_function("QgisSweptPath", v, getattr(self, k))
+            if type_conversion_ok:
+                setattr(self, k, attr)
 
 
     def _write_properties(self):
         """
         Writes the properties to the QGIS project
         """
-        settings = QgsSettings()
         for k, v in self._properties.items():
-            settings.setValue(v, getattr(self, k))
+            current_value = getattr(self, k)
+            if isinstance(current_value, str):
+                write_function = self.proj.writeEntry
+            elif isinstance(current_value, int):
+                write_function = self.proj.writeEntry
+            elif isinstance(current_value, float):
+                write_function = self.proj.writeEntryDouble
+            elif isinstance(current_value, bool):
+                write_function = self.proj.writeEntryBool
+            else:
+                continue
+
+            write_function("QgisSweptPath", v, getattr(self, k))
 
 
     def _show_file_select_dialog(self,
@@ -281,6 +357,52 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
         self._simulation_mode = int(SimulationMode.STEP_BASED.value)
 
 
+    def _change_vehicle_packages(self):
+        self._vehicle_packages = str(self.propVehiclePackages.text())
+
+
+    def _change_path_layer_id(self):
+        self._path_layer_id = str(self.propPathLayerId.text())
+
+
+    def _change_vehicle_layer_id(self):
+        self._vehicle_layer_id = str(self.propVehicleLayerId.text())
+
+
+    def _change_border_distance(self):
+        self._border_distance = float(self.propBorderDistance.value())
+
+
+    def _change_auto_map_movement(self):
+        self._auto_map_movement = bool(self.propAutoMapMovement.isChecked())
+
+
+    def _clicked_distance_map_units(self):
+        self.propDistancePixels.setChecked(False)
+        self._border_distance_units = int(BorderDistanceUnits.MAP_UNITS.value)
+
+
+    def _clicked_distance_pixels(self):
+        self.propDistanceMapUnits.setChecked(False)
+        self._border_distance_units = int(BorderDistanceUnits.PIXELS.value)
+
+
+    def _clicked_edit_path_layer(self):
+        self._path_layer_changed = True
+        if self.chbEditPathLayer.isChecked():
+            self.propPathLayerId.setReadOnly(True)
+        else:
+            self.propPathLayerId.setReadOnly(False)
+
+
+    def _clicked_edit_vehicle_layer(self):
+        self._vehicle_layer_changed = True
+        if self.chbEditVehicleLayer.isChecked():
+            self.propVehicleLayerId.setReadOnly(True)
+        else:
+            self.propVehicleLayerId.setReadOnly(False)
+
+
     @property
     def frames(self) -> int:
         """Frames per seconds for simulation"""
@@ -339,7 +461,7 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def dissolve_fields(self) -> str:
         """
         String of fields to dissolve the paths by
-        Comma separated
+        Semicolon separated
         """
         return self._dissolve_fields
 
@@ -414,6 +536,30 @@ class QgisSweptPathDockWidgetProp(QDockWidget, FORM_CLASS):
     def key_steer_right(self) -> str:
         """Key steer right as string"""
         return self._key_steer_right
+
+
+    @property
+    def vehicle_packages(self) -> str:
+        """Semicolon separated string of vehicle package directories"""
+        return self._vehicle_packages
+
+
+    @property
+    def border_distance_units(self) -> BorderDistanceUnits:
+        """Border Distance Units"""
+        return self._border_distance_units
+
+
+    @property
+    def auto_map_movement(self) -> bool:
+        """True if the automatic map movement is on"""
+        return self._auto_map_movement
+
+
+    @property
+    def border_distance(self) -> float:
+        """Minimal distance from border for automatic map movement"""
+        return self._border_distance
 
 
     # Setters

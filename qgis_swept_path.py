@@ -24,32 +24,27 @@
 
 from qgis.PyQt.QtCore import Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter
+from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton
+from qgis.core import QgsGeometry, QgsField, QgsPointXY, QgsFeature, QgsVectorLayer, Qgis, QgsProject, QgsVectorFileWriter, QgsRectangle
 from qgis.gui import QgsGui, QgsVectorLayerSaveAsDialog
 from uuid import uuid4
-
-# Initialize Qt resources from file resources.py
 
 # Import the code for the DockWidget
 from .qgis_swept_path_dockwidget_base import QgisSweptPathDockWidgetBase
 from .qgis_swept_path_dockwidget_prop import QgisSweptPathDockWidgetProp
 from .simulator import Simulator
-from .qgis_swept_path_enum import SimulationMode
+from .qgis_swept_path_enum import SimulationMode, BorderDistanceUnits
+from .vehicle_factory import VehicleFactory
 import os.path
 
 # Import SweptPath code
-
 from .vehicle import Vehicle
-from .vehicles.mercedes_citaro import MercedesCitaro
-from .vehicles.mercedes_citaro_g import MercedesCitaroG
-from .vehicles.mercedes_citaro_g_trailer import MercedesCitaroGTrailer
-from .vehicles.gelenkbus_18_75 import Gelenkbus1875
-from .vehicles.gelenkbus_18_75_trailer import Gelenkbus1875Trailer
+from .vehicle_status import VehicleStatus, VehicleStatusType, VehicleStatusAction
 
-from .coord import CartesianCoord, CoordUtils
+from .coord import CoordUtils
 from .vehicle_placer import VehiclePlacer
 from .path_points import PathPoints
+from .resources import *
 
 class QgisSweptPath:
     """QGIS Plugin Implementation."""
@@ -59,12 +54,14 @@ class QgisSweptPath:
         # Save reference to the QGIS interface
         self.iface = iface
         self.canvas = iface.mapCanvas()
+        self.proj: QgsProject = QgsProject.instance()
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
 
         # Declare instance attributes
         self.actions = []
+        self.start_plugin_action = None
         self.menu = "QgisSweptPath"
         self.toolbar = self.iface.addToolBar('QgisSweptPath')
         self.toolbar.setObjectName('QgisSweptPath')
@@ -81,13 +78,16 @@ class QgisSweptPath:
         self.vehicle: Vehicle = None  # The vehicle to simulate
         self._path_points: list[PathPoints] = []  # Stores all the path points during simulation
 
-        # Controls the printing iteration
-        self._print_iteration: int = 0  # Increments with each simulation step and will be set to 0 when a print was run
+        self._vehicle_list: dict[str, tuple[str, str]] = {}
 
         # Visualisation
         self._vehicle_layer: QgsVectorLayer = None  # Layer to draw the vehicle during simulation
         self._path_layer: QgsVectorLayer = None  # Layer to draw the swept path
         self._vehicle_features: dict[Vehicle, QgsFeature] = {}  # Dict with vehicle and the corresponding feature
+        # Map units per pixel. Used for automatic map movement. 1 = no transformation from map units
+        self._units_p_pixel: float = 1
+        # Map canvas extent. Used for automatic map movement.
+        self._map_extent: QgsRectangle = self.canvas.extent()
 
 
     def run(self):
@@ -108,8 +108,9 @@ class QgisSweptPath:
                 # Setup Controls
                 self.setupControls()
 
-            # connect to provide cleanup on closing of dockwidget
+            # connect to provide cleanup on closing of dockwidget and on closing project
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+            self.proj.cleared.connect(self.closePlugin)
 
             # Signals
             self.dockwidget.btnStartStopSimulation.clicked.connect(self.startStopSimulation)
@@ -118,11 +119,31 @@ class QgisSweptPath:
             self.dockwidget.btnCreateVehicle.clicked.connect(self._setup_vehicle)
             self.dockwidget.btnPlaceVehicle.clicked.connect(self._place_vehicle)
             self.dockwidget.btnShowProperties.clicked.connect(self._show_properties)
+            self.dockwidget.btnReloadVehicleList.clicked.connect(self.setupVehicleList)
+            self.dockwidget.chbCreateVehicle.clicked.connect(self._check_create_vehicle)
+            self.dockwidget.chbPlaceVehicle.clicked.connect(self._check_place_vehicle)
+            self.dockwidget.chbVehicleLayer.clicked.connect(self._check_create_vehicle_layer)
+            self.dockwidget.chbPathLayer.clicked.connect(self._check_create_path_layer)
+            self.dockwidget.cmboVehicleSelect.currentIndexChanged.connect(self._reset_vehicle)
+            self.dockwidget.btnPauseResumeSimulation.clicked.connect(self._pause_resume_simulation)
+
             # Signals from simulator
             self.simulator.drawVehicle.connect(self._draw_vehicle)
-            self.simulator.storePath.connect(self._store_path_points)
+            # self.simulator.storePath will be connected on start simulation only if print path is set to true
+
+            # Signals from properties
+            self.prop.vehicleLayerChanged.connect(self.setupVehicleLayer)
+            self.prop.pathLayerChanged.connect(self.setupPathLayer)
+            self.prop.btnReloadVehicleLayerStyle.clicked.connect(self._set_default_vehicle_layer_style)
+            self.prop.btnReloadPathLayerStyle.clicked.connect(self._set_default_path_layer_style)
 
             self.setupLayers()
+            self.setupVehicleList()
+
+            # Update status check boxes
+            if self.vehicle:
+                self.dockwidget.chbCreateVehicle.setChecked(True)
+                self.dockwidget.chbPlaceVehicle.setChecked(self.vehicle.is_placed)
 
             # show the dockwidget
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -135,28 +156,39 @@ class QgisSweptPath:
         self.add_action("Steer left",
                         self.simulator.steerLeft,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/steer_left.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+J")
         self.add_action("Steer right",
                         self.simulator.steerRight,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/steer_right.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+L")
         self.add_action("Speed up",
                         self.simulator.speedUp,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/speed_up.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+I")
         self.add_action("Speed down",
                         self.simulator.speedDown,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/speed_down.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+K")
         self.add_action("Start/Stop simulation",
                         self.startStopSimulation,
                         add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/start_stop.png",
                         parent=self.iface.mainWindow(),
                         shortcut="Ctrl+Shift+U")
+        self.add_action("Pause/Resume simulation",
+                        self._pause_resume_simulation,
+                        add_to_menu=True,
+                        icon_path=":/plugins/qgis_swept_path/icon/pause_resume.png",
+                        parent=self.iface.mainWindow(),
+                        shortcut="Ctrl+Shift+O")
 
     def setupLayers(self):
         """
@@ -164,16 +196,21 @@ class QgisSweptPath:
 
         Try to load the layers (vehicle and path) from the stored ids in the project settings
         If no ids are stored (swept path plugin is never used before in this project) or the layers are not available
-        (layer deleted since last run) new vehicle and/or path layers are created and the ids saved in the project
+        (layer deleted since last run) a new vehicle layer is created and the id is saved in the project.
+        A new path layer is never generated automatically, to avoid automatic show up of layer save dialog.
         """
+        self.setupVehicleLayer()
+        self.setupPathLayer()
 
-        # Vehicle layer
+
+    def setupVehicleLayer(self):
+        # Create vehicle layer
         if self.prop.vehicle_layer_id is "":
             # Create new layer if there is no id stored in the project
             self._create_vehicle_layer()
         else:
             # Get the layer by the id
-            vehicle_layer = QgsProject.instance().mapLayer(self.prop.vehicle_layer_id)
+            vehicle_layer = self.proj.mapLayer(self.prop.vehicle_layer_id)
             if vehicle_layer is None:
                 # If the layer is not available create new layer
                 self.iface.messageBar().pushMessage(
@@ -185,7 +222,10 @@ class QgisSweptPath:
             else:
                 # Save reference to the existing layer and show the id in the text field
                 self._vehicle_layer = vehicle_layer
+                self.dockwidget.chbVehicleLayer.setChecked(True)
 
+
+    def setupPathLayer(self):
         # Path layer (details see vehicle layer above)
         if self.prop.path_layer_id is "":
             self.iface.messageBar().pushMessage(
@@ -194,7 +234,7 @@ class QgisSweptPath:
                 level=Qgis.Info
             )
         else:
-            path_layer = QgsProject.instance().mapLayer(self.prop.path_layer_id)
+            path_layer = self.proj.mapLayer(self.prop.path_layer_id)
             if path_layer is None:
                 self.iface.messageBar().pushMessage(
                     "Path layer not available",
@@ -203,6 +243,33 @@ class QgisSweptPath:
                 )
             else:
                 self._path_layer = path_layer
+                self.dockwidget.chbPathLayer.setChecked(True)
+
+
+    def setupVehicleList(self):
+        """
+        Get the dict from the vehicle Factory
+        Set up the combo box for vehicle selection
+        """
+        # Get package list from properties and get classes with vehicle factory
+        package_list: list[str] = []
+        if self.prop.vehicle_packages is not None and len(self.prop.vehicle_packages.strip()) >= 1:
+            package_list = self.prop.vehicle_packages.split(";")
+        self._vehicle_list, errors = VehicleFactory.get_classes(package_list)
+
+        for err in errors:
+            self.iface.messageBar().pushMessage(
+                "Vehicles not loaded",
+                "The vehicles could not be loaded from {}".format(err),
+                level=Qgis.Critical
+            )
+
+        # Remove all existing items
+        self.dockwidget.cmboVehicleSelect.clear()
+
+        # Add all Vehicles from vehicle list
+        for vehicle_name, _ in self._vehicle_list.items():
+            self.dockwidget.cmboVehicleSelect.addItem(vehicle_name)
 
 
     def setup_path_points(self):
@@ -239,30 +306,51 @@ class QgisSweptPath:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         icon_path = ":/plugins/qgis_swept_path/icon.png"
-        self.add_action(
+        self.start_plugin_action = self.add_action(
             text="QgisSweptPath",
             callback=self.run,
             icon_path=icon_path,
             enabled_flag=True,
+            add_to_toolbar=True,
             add_to_menu=True,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow(),
+            remove_on_close=False)  # Do not delete this action when the widget is closed
+
+
+    def closePlugin(self):
+        self.dockwidget.close()
 
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
-        # disconnects
-        self.stopSimulation()
+        # Stop simulation
+        if self.simulator and self.simulator.simulation_running:
+            self.stopSimulation()
+
+        # Remove the actions (the start_plugin_action will not be removed)
+        self.remove_actions()
+
+        # Disconnect signals
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
+        self.proj.cleared.disconnect(self.closePlugin)
+
+        # Delete the Qt objects
+        self.dockwidget.deleteLater()
+        self.dockwidget = None
+        self.prop.deleteLater()
+        self.prop = None
+        self.simulator.deleteLater()
+        self.simulator = None
+
+        # Set plugin inactive
         self.pluginIsActive = False
 
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginMenu('QgisSweptPath', action)
-            self.iface.removeToolBarIcon(action)
-            self.iface.unregisterMainWindowAction(action)
-            QgsGui.shortcutsManager().unregisterAction(action)
+        self.actions.append(self.start_plugin_action)  # Add the start plugin action to the list so it will be removed
+        self.remove_actions()
+        
         # remove the toolbar
         del self.toolbar
 
@@ -278,7 +366,8 @@ class QgisSweptPath:
         status_tip=None,
         whats_this=None,
         parent=None, 
-        shortcut=None):
+        shortcut=None,
+        remove_on_close=True):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -316,6 +405,9 @@ class QgisSweptPath:
         :param shortcut: Optional text for keyboard shortcut. Default None
         :type shortcut: str
 
+        :param remove_on_close: Flag indicating whether the action should be deleted on widget closed. Default True
+        :type remove_on_close: bool
+
         :returns: The action that was created. Note that the action is also
             added to self.actions list.
         :rtype: QAction
@@ -343,10 +435,22 @@ class QgisSweptPath:
         if shortcut is not None:
             self.iface.registerMainWindowAction(action, shortcut)
             QgsGui.shortcutsManager().registerAction(action)
-            
-        self.actions.append(action)
+
+        if remove_on_close:
+            self.actions.append(action)
 
         return action
+
+
+    def remove_actions(self):
+        """ Remove all actions/menu items in actions list """
+        for action in self.actions:
+            self.iface.removePluginMenu('QgisSweptPath', action)
+            self.iface.removeToolBarIcon(action)
+            self.iface.unregisterMainWindowAction(action)
+            QgsGui.shortcutsManager().unregisterAction(action)
+
+        self.actions = []
 
 
     def update_speed(self):
@@ -366,14 +470,26 @@ class QgisSweptPath:
 
 
     def stopSimulation(self):
-        self.dockwidget.btnStartStopSimulation.setText("START")
         self.simulator.stopSimulation()
+
         if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
             self.canvas.removeEventFilter(self.simulator)
+        if self.prop.auto_map_movement:
+            self.canvas.extentsChanged.disconnect(self._update_map_extent)
+        if self.prop.print_path:
+            self.simulator.storePath.disconnect(self._store_path_points)
+            self._write_path_to_layer()
 
-        self.dockwidget.btnShowProperties.setEnabled(True)
+        # Reset bending angle monitoring for all vehicle parts
+        for v in self.vehicle.vehicle_parts:
+            v.ignore_bending_angle = False
 
-        self._write_path_to_layer()
+        # Update buttons text and status
+        self._show_buttons()
+        self.dockwidget.btnStartStopSimulation.setText("START")
+        self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
+        self.dockwidget.btnPauseResumeSimulation.setEnabled(False)
+
 
 
     def startSimulation(self):
@@ -386,10 +502,26 @@ class QgisSweptPath:
             self._simulation_id = self.dockwidget.txtSimulationId.text()
 
         # The vehicle must first be created manually and be placed
-        if self.vehicle is not None and self.vehicle.is_placed:
+        if self.vehicle is None or not self.vehicle.is_placed:
+            self.iface.messageBar().pushMessage(
+                "Can't start simulation",
+                "The vehicle must first be created and placed",
+                level=Qgis.Critical)
+        elif self._path_layer is None:
+            self.iface.messageBar().pushMessage(
+                "Can't start simulation",
+                "No valid path layer available. Path layer must first be created or be set in the properties.",
+                level=Qgis.Critical)
+        else:
+            # Update buttons text and status
+            self._hide_buttons()
+            self.dockwidget.btnStartStopSimulation.setText("STOP")
+            self.dockwidget.btnPauseResumeSimulation.setEnabled(True)
+
             # Checks if print path is set to true
             if self.prop.print_path:
                 self.setup_path_points()
+                self.simulator.storePath.connect(self._store_path_points)
 
             # Update the text fields with the steering and speed
             self.update_steering()
@@ -400,38 +532,127 @@ class QgisSweptPath:
             self.simulator.properties = self.prop
             if self.prop.simulation_mode == SimulationMode.FRAME_BASED:
                 self.canvas.installEventFilter(self.simulator)
+            if self.prop.auto_map_movement:
+                self.canvas.extentsChanged.connect(self._update_map_extent)
+                self._update_map_extent()
             self.simulator.startSimulation()
             self.canvas.setFocus(Qt.OtherFocusReason)
 
-            self.dockwidget.btnStartStopSimulation.setText("STOP")
-            self.dockwidget.btnShowProperties.setEnabled(False)
+
+    def _pause_resume_simulation(self):
+        if self.simulator.pauseResumeSimulation():
+            self.dockwidget.btnPauseResumeSimulation.setText("RESUME")
         else:
-            self.iface.messageBar().pushMessage(
-                "Can't start simulation",
-                "The vehicle must first be created and placed",
-                level=Qgis.Critical
-            )
+            self.canvas.setFocus(Qt.OtherFocusReason)
+            self.dockwidget.btnPauseResumeSimulation.setText("PAUSE")
+
+
+    def _vehicle_stopped_simulation(self, vehicle_status: VehicleStatus):
+        # Called, when the vehicle stop simulation signal is sent
+        # Stop the simulation and show status
+        self.stopSimulation()
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Vehicle stopped simulation")
+        btn_close: QPushButton = message_box.addButton("Close", QMessageBox.AcceptRole)
+
+        # Case switch for vehicle status type
+        if vehicle_status.status_type == VehicleStatusType.UNDEFINED_ERROR:
+            message_box.setText(("Undefined error in vehicle: {}\n"
+                                "Original message: ").format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_close:
+                return
+
+
+    def _vehicle_paused_simulation(self, vehicle_status: VehicleStatus):
+        # Called, when the vehicle pause simulation signal is sent
+        self._pause_resume_simulation()
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Vehicle paused simulation")
+        btn_stop: QPushButton = message_box.addButton("Stop simulation", QMessageBox.ActionRole)
+
+        # Case switch for vehicle status type
+        if vehicle_status.status_type == VehicleStatusType.UNDEFINED_ERROR:
+            message_box.setText(("Undefined error in vehicle: {}\n"
+                                "Original message: {}").format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_stop:
+                self.stopSimulation()
+
+        if vehicle_status.status_type == VehicleStatusType.MAX_ANGLE:
+            btn_resume: QPushButton = message_box.addButton("Resume simulation", QMessageBox.ActionRole)
+            message_box.setText("Maximal bending angle reached.\n"
+                                "If the simulation is continued, it does not simulate a real situation.\n"
+                                "Vehicle {}.\n"
+                                "Original message: {}".format(vehicle_status.vehicle_name, vehicle_status.status_message))
+            message_box.exec()
+            if message_box.clickedButton() == btn_stop:
+                self.stopSimulation()
+            elif message_box.clickedButton() == btn_resume:
+                for v in self.vehicle.vehicle_parts:
+                    v.ignore_bending_angle = True
+                self._pause_resume_simulation()
+
+
+    def _reset_vehicle(self):
+        # Uncheck vehicle status and delete vehicle
+        self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
+        self._disconnect_vehicle_signals()
+        self.vehicle = None
 
 
     def _setup_vehicle(self):
-        # TODO: Add a vehicle factory
-        trailer = Gelenkbus1875Trailer()
-        self.vehicle = MercedesCitaro()
-        #  self.vehicle.trailer = trailer
+        self.dockwidget.chbCreateVehicle.setChecked(False)
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
+        self._vehicle_features.clear()
+        selected_vehicle_name: str = self.dockwidget.cmboVehicleSelect.currentText()
+        vehicle_item: tuple[str, str] = self._vehicle_list[selected_vehicle_name]
+
+        vehicle_module = __import__(vehicle_item[1], fromlist=[vehicle_item[0]])
+        vehicle_class = getattr(vehicle_module, vehicle_item[0])
+
+        self._disconnect_vehicle_signals()
+        self.vehicle = vehicle_class()
+        self._connect_vehicle_signals()
+
+        self.dockwidget.chbCreateVehicle.setChecked(True)
+
+
+    def _connect_vehicle_signals(self):
+        # Connects the signals for all child vehicles
+        for v in self.vehicle.vehicle_parts:
+            v.pauseSimulation.connect(self._vehicle_paused_simulation)
+            v.stopSimulation.connect(self._vehicle_stopped_simulation)
+
+
+    def _disconnect_vehicle_signals(self):
+        # Disconnects the signals for all child vehicles
+        if isinstance(self.vehicle, Vehicle):
+            for v in self.vehicle.vehicle_parts:
+                v.pauseSimulation.disconnect(self._vehicle_paused_simulation)
+                v.stopSimulation.disconnect(self._vehicle_stopped_simulation)
 
 
     def _place_vehicle(self):
+        self.dockwidget.chbPlaceVehicle.setChecked(False)
         # Place the vehicle with the VehiclePlacer class
-        if self.vehicle is not None:
-            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
-            self._vehicle_placer.placed.connect(self._vehicle_placed)
-            self.canvas.setMapTool(self._vehicle_placer)
-        else:
+        if self._vehicle_layer is None:
+            self.iface.messageBar().pushMessage(
+                "Can't place vehicle",
+                "The vehicle layer must first be created or be set in the properties",
+                level=Qgis.Critical)
+        elif self.vehicle is None:
             self.iface.messageBar().pushMessage(
                 "Can't place vehicle",
                 "The vehicle must first be created",
-                level=Qgis.Critical
-            )
+                level=Qgis.Critical)
+        else:
+            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
+            self._vehicle_placer.placed.connect(self._vehicle_placed)
+            self.canvas.setMapTool(self._vehicle_placer)
 
 
     def _vehicle_placed(self):
@@ -440,21 +661,24 @@ class QgisSweptPath:
         self.canvas.unsetMapTool(self._vehicle_placer)
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
-        self._draw_vehicle()
+        self.dockwidget.chbPlaceVehicle.setChecked(True)
 
 
     def _draw_vehicle(self):
-        if not self.canvas.isDrawing():
-            self._vehicle_layer.dataProvider().truncate()
-            for v, f in self._vehicle_features.items():
-                f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
-                f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
-                f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
-                self._vehicle_layer.dataProvider().addFeatures([f])
+        self._vehicle_layer.dataProvider().truncate()
+        for v, f in self._vehicle_features.items():
+            f["rotation"] = CoordUtils.rad_to_degrees(v.a) * -1
+            f["wheel_angle"] = CoordUtils.rad_to_degrees(v.steering_angle)
+            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(v.f.x, v.f.y)))
+            self._vehicle_layer.dataProvider().addFeatures([f])
 
-            self._vehicle_layer.triggerRepaint()
-            self.update_speed()
-            self.update_steering()
+        if self.prop.auto_map_movement and self._vehicle_reached_edge():
+            self.canvas.setCenter(QgsPointXY(self.vehicle.f.x, self.vehicle.f.y))
+
+        self._vehicle_layer.triggerRepaint()
+
+        self.update_speed()
+        self.update_steering()
 
 
     def _create_vehicle_drawing(self):
@@ -502,6 +726,14 @@ class QgisSweptPath:
         """
         Create a new in memory vector layer to show the vehicle during simulation
         """
+        if self.dockwidget.chbVehicleLayer.isChecked():
+            self.iface.messageBar().pushMessage(
+                "Vehicle layer already exists",
+                "To create a new vehicle layer uncheck this option first",
+                level=Qgis.Info
+            )
+            return
+
         if self._vehicle_layer is not None:
             # Print the message, when the vehicle layer already exists
             self.iface.messageBar().pushMessage(
@@ -512,7 +744,7 @@ class QgisSweptPath:
 
         # Create new vector layer and set Crs to project crs
         self._vehicle_layer = self.iface.addVectorLayer("Point", "vehicle", "memory")
-        crs = QgsProject.instance().crs()
+        crs = self.proj.crs()
         self._vehicle_layer.setCrs(crs)
 
         # Add the attributes
@@ -526,16 +758,33 @@ class QgisSweptPath:
         self._vehicle_layer.updateFields()
 
         # Add layer as new map layer
-        QgsProject.instance().addMapLayer(self._vehicle_layer)
+        self.proj.addMapLayer(self._vehicle_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_vehicle_layer_id(self._vehicle_layer.id())
+
+        # Add signal for layer delete
+        self._vehicle_layer.willBeDeleted.connect(self._vehicle_layer_delete)
+
+        # Set default style
+        self._set_default_vehicle_layer_style()
+
+        # Lock vehicle layer
+        self.dockwidget.chbVehicleLayer.setChecked(True)
 
 
     def _create_path_layer(self):
         """
         Create a new vector layer to print the paths
         """
+        if self.dockwidget.chbPathLayer.isChecked():
+            self.iface.messageBar().pushMessage(
+                "Path layer already exists",
+                "To create a new path layer uncheck this option first",
+                level=Qgis.Info
+            )
+            return
+
         if self._path_layer is not None:
             # Print the message, when the path layer already exists
             self.iface.messageBar().pushMessage(
@@ -545,7 +794,7 @@ class QgisSweptPath:
             )
 
         self._path_layer = self.iface.addVectorLayer("LineString", "path", "memory")
-        crs = QgsProject.instance().crs()
+        crs = self.proj.crs()
         self._path_layer.setCrs(crs)
 
         # Add the attributes
@@ -557,10 +806,16 @@ class QgisSweptPath:
         self._path_layer.updateFields()
 
         # Add layer as new map layer
-        QgsProject.instance().addMapLayer(self._path_layer)
+        self.proj.addMapLayer(self._path_layer)
 
         # Save the id of the map layer in the project and show the id in the text field
         self.prop.set_path_layer_id(self._path_layer.id())
+
+        # Add signal for layer delete
+        self._path_layer.willBeDeleted.connect(self._path_layer_delete)
+
+        # Set default style
+        self._set_default_path_layer_style()
 
         # Show dialog to save the path layer to file/database
         save_dialog = QgsVectorLayerSaveAsDialog(self._path_layer, QgsVectorLayerSaveAsDialog.Option.Symbology)
@@ -568,7 +823,7 @@ class QgisSweptPath:
             # If dialog returns true
             save_options = QgsVectorFileWriter.SaveVectorOptions()  # Create save options
             save_options.layerName = save_dialog.layerName()  # Set layer name
-            transform_context = QgsProject.instance().transformContext()  # Transform context
+            transform_context = self.proj.transformContext()  # Transform context
             # Save layer to file
             writer_error = QgsVectorFileWriter.writeAsVectorFormatV3(self._path_layer,
                                                               save_dialog.fileName(),
@@ -581,6 +836,7 @@ class QgisSweptPath:
                     "{}|layername={}".format(save_dialog.fileName(), save_dialog.layerName()),
                     self._path_layer.name(),
                     'ogr')
+
             else:
                 # On error show message and keep local layer
                 self.iface.messageBar().pushWarning(
@@ -596,7 +852,137 @@ class QgisSweptPath:
                 "when the project is closed. The created layer must be saved manually",
             )
 
+        # Lock path layer
+        self.dockwidget.chbPathLayer.setChecked(True)
+
+
+    def _set_default_path_layer_style(self):
+        # Set default style for path layer
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.path_layer_style))
+        self._path_layer.loadNamedStyle(absolute_style_path)
+        self._path_layer.triggerRepaint()
+
+
+    def _set_default_vehicle_layer_style(self):
+        # Set default style for vehicle layer
+        absolute_style_path = os.path.abspath(os.path.join(self.plugin_dir, self.prop.vehicle_layer_style))
+        self._vehicle_layer.loadNamedStyle(absolute_style_path)
+        self._vehicle_layer.triggerRepaint()
+
+
+    def _check_place_vehicle(self):
+        self.iface.messageBar().pushMessage(
+            "Place vehicle",
+            "Status can not be checked manually. Use the button for placing the vehicle",
+            level=Qgis.Info,
+            duration=3
+        )
+        if self.dockwidget.chbPlaceVehicle.isChecked():
+            self.dockwidget.chbPlaceVehicle.setChecked(False)
+        else:
+            self.dockwidget.chbPlaceVehicle.setChecked(True)
+
+
+    def _check_create_vehicle(self):
+        self.iface.messageBar().pushMessage(
+            "Create vehicle",
+            "Status can not be checked manually. Use the button for creating a new vehicle",
+            level=Qgis.Info,
+            duration=3
+        )
+        if self.dockwidget.chbCreateVehicle.isChecked():
+            self.dockwidget.chbCreateVehicle.setChecked(False)
+        else:
+            self.dockwidget.chbCreateVehicle.setChecked(True)
+
+
+    def _check_create_vehicle_layer(self):
+        if self.dockwidget.chbVehicleLayer.isChecked():
+            self.dockwidget.chbVehicleLayer.setChecked(False)
+            self.setupVehicleLayer()
+
+
+    def _check_create_path_layer(self):
+        if self.dockwidget.chbPathLayer.isChecked():
+            self.dockwidget.chbPathLayer.setChecked(False)
+            self.setupPathLayer()
+
+    def _vehicle_layer_delete(self):
+        self.dockwidget.chbVehicleLayer.setChecked(False)
+        self.prop.set_vehicle_layer_id("")
+        self._vehicle_layer.willBeDeleted.disconnect(self._vehicle_layer_delete)
+        self._vehicle_layer = None
+        self.iface.messageBar().pushMessage(
+            "Vehicle layer deleted",
+            "Before start a new simulation a new vehicle layer must be created or be set in the properties",
+            level=Qgis.Info)
+
+
+    def _path_layer_delete(self):
+        self.dockwidget.chbPathLayer.setChecked(False)
+        self.prop.set_path_layer_id("")
+        self._path_layer.willBeDeleted.disconnect(self._path_layer_delete)
+        self._path_layer = None
+        self.iface.messageBar().pushMessage(
+            "Path layer deleted",
+            "Before start a new simulation a new path layer must be created or be set in the properties",
+            level=Qgis.Info)
+
+
+    def _update_map_extent(self):
+        self._map_extent = self.canvas.extent()
+        if self.prop.border_distance_units == BorderDistanceUnits.MAP_UNITS:
+            self._units_p_pixel = 1
+        elif self.prop.border_distance_units == BorderDistanceUnits.PIXELS:
+            self._units_p_pixel = self.canvas.mapUnitsPerPixel()
+
+
+    def _vehicle_reached_edge(self):
+        if (self._map_extent.xMaximum() - self.vehicle.f.x) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self.vehicle.f.x - self._map_extent.xMinimum()) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self._map_extent.yMaximum() - self.vehicle.f.y) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        if (self.vehicle.f.y - self._map_extent.yMinimum()) / self._units_p_pixel < self.prop.border_distance:
+            return True
+        # If the vehicle is not outside bounds return false
+        return False
+
 
     def _show_properties(self):
         self.prop.show()
 
+
+    def _hide_buttons(self):
+        """
+        Hide all the not needed buttons during simulation
+        """
+        self.dockwidget.btnShowProperties.setEnabled(False)
+        self.dockwidget.btnAddVehicleLayer.setEnabled(False)
+        self.dockwidget.btnAddPathLayer.setEnabled(False)
+        self.dockwidget.btnCreateVehicle.setEnabled(False)
+        self.dockwidget.btnPlaceVehicle.setEnabled(False)
+        self.dockwidget.btnReloadVehicleList.setEnabled(False)
+        self.dockwidget.chbCreateVehicle.setEnabled(False)
+        self.dockwidget.chbPlaceVehicle.setEnabled(False)
+        self.dockwidget.chbVehicleLayer.setEnabled(False)
+        self.dockwidget.chbPathLayer.setEnabled(False)
+        self.dockwidget.cmboVehicleSelect.setEnabled(False)
+
+
+    def _show_buttons(self):
+        """
+        Shows all buttons after the simulation has stopped
+        """
+        self.dockwidget.btnShowProperties.setEnabled(True)
+        self.dockwidget.btnAddVehicleLayer.setEnabled(True)
+        self.dockwidget.btnAddPathLayer.setEnabled(True)
+        self.dockwidget.btnCreateVehicle.setEnabled(True)
+        self.dockwidget.btnPlaceVehicle.setEnabled(True)
+        self.dockwidget.btnReloadVehicleList.setEnabled(True)
+        self.dockwidget.chbCreateVehicle.setEnabled(True)
+        self.dockwidget.chbPlaceVehicle.setEnabled(True)
+        self.dockwidget.chbVehicleLayer.setEnabled(True)
+        self.dockwidget.chbPathLayer.setEnabled(True)
+        self.dockwidget.cmboVehicleSelect.setEnabled(True)

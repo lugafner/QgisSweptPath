@@ -4,7 +4,8 @@ import time
 from threading import Thread
 from typing import Optional
 
-from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent, Qt
+from qgis.PyQt.QtCore import QObject, pyqtSignal, QTimer, QEvent
+from qgis.gui import QgsMapCanvas
 from qgis.PyQt.QtGui import QKeySequence
 from qgis.core import Qgis
 
@@ -18,14 +19,16 @@ class Simulator(QObject):
     drawVehicle: pyqtSignal = pyqtSignal(name="drawVehicle")
     storePath: pyqtSignal = pyqtSignal(name="storePath")
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, canvas: QgsMapCanvas):
         """Constructor"""
-        super().__init__(parent)
+        super().__init__(canvas)
+        self._canvas = canvas
 
         self._vehicle: Vehicle = None
         self._prop: QgisSweptPathDockWidgetProp = None
 
         self._simulation_running: bool = False
+        self._simulation_paused: bool = False
         self._simulation_timer: QTimer = QTimer(self)
         self._simulation_timer.timeout.connect(self._simulate_frame)
 
@@ -107,9 +110,21 @@ class Simulator(QObject):
             self._simulation_timer.stop()
 
         self._simulation_running = False
+        self._simulation_paused = False
+
+        # Reset flags for steering and speed change
+        self._steer_right = False
+        self._steer_left = False
+        self._speed_up = False
+        self._speed_down = False
 
         self.drawVehicle.emit()
         self.storePath.emit()
+
+
+    def pauseResumeSimulation(self) -> bool:
+        self._simulation_paused = not self._simulation_paused
+        return self._simulation_paused
 
 
     def speedUp(self):
@@ -133,6 +148,10 @@ class Simulator(QObject):
 
 
     def _simulate_frame(self):
+        if self._simulation_paused or self._canvas.isDrawing():
+            # Skip simulation if simulation is paused or canvas is drawing
+            return
+
         if self._speed_up:
             self._vehicle.speed_up(self._time_between_steps * self._prop.acceleration)
 
@@ -159,6 +178,10 @@ class Simulator(QObject):
 
     def _simulate_step(self):
         while self._simulation_running:
+            if self._simulation_paused or self._canvas.isDrawing():
+                # Skip simulation if simulation is paused or canvas is drawing
+                continue
+
             if self._vehicle.speed > self._prop.minimum_speed:
                 self._vehicle.step(self._prop.step_distance)
 
@@ -174,6 +197,11 @@ class Simulator(QObject):
     @property
     def simulation_running(self) -> bool:
         return self._simulation_running
+
+
+    @property
+    def simulation_paused(self) -> bool:
+        return self._simulation_paused
 
 
     @property
@@ -194,3 +222,5 @@ class Simulator(QObject):
     @vehicle.setter
     def vehicle(self, v: Vehicle):
         self._vehicle = v
+
+
