@@ -32,7 +32,7 @@ Mit dem Plug-in **QgisSweptPath** können direkt im QGIS grobe Abklärungen zur 
 
 Das Plug-in eignet sich für schnelle, grobe Abklärungen und erreicht nicht die Genauigkeit und Benutzerfreundlichkeit professioneller CAD-Tools für Ingenieure. Das Tool insbesondere für Anwender geeignet, die für ihre Projekte ohnehin QGIS verwenden und so kein zusätzliches Programm für die Schleppkurvensimulationen einsetzen müssen.
 
-QgisSweptPath ist ein reines Freizeitprojekt und wird von einzelnen Personen betreut und weiterentwickelt. Aus diesem Grund gibt es keinen Support für Anwender. Falls Sie aber Fehler entdecken, oder sich bei der Weiterentwicklung einbringen möchten, können Sie ihr Anliegen gerne im offiziellen [Github-Repository](https://github.com/lugafner/QgisSweptPath) als [Issue](https://github.com/lugafner/QgisSweptPath/issues) erfassen.
+QgisSweptPath wird zurzeit von einzelnen Personen betreut und weiterentwickelt. Aus diesem Grund gibt es keinen Support für Anwender. Falls Sie aber Fehler entdecken, oder sich bei der Weiterentwicklung einbringen möchten, können Sie ihr Anliegen gerne im offiziellen [Github-Repository](https://github.com/lugafner/QgisSweptPath) als [Issue](https://github.com/lugafner/QgisSweptPath/issues) erfassen.
 
 [![Static Badge](https://img.shields.io/badge/Github-QgisSweptPath-ad0000?style=for-the-badge&logoColor=%23ffffff&color=ad0000)](https://github.com/lugafner/QgisSweptPath)
 
