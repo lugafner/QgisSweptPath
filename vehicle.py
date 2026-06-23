@@ -104,6 +104,10 @@ class Vehicle(QObject):
         back_distance: float = self._body_length - self._front_axle_ref_pos
         body_side_offset: float = self._body_width / 2
 
+        # Initialise vehicle position and azimuth with the values of 0
+        self._global_f: CartesianCoord = CartesianCoord(0, 0)
+        self._global_a: float = 0.0
+
         if self._has_body:
             self._local_point_bl: PolarCoord = CoordUtils.to_polar(- back_distance, body_side_offset)
             self._local_point_fl: PolarCoord = CoordUtils.to_polar(self._front_axle_ref_pos, body_side_offset)
@@ -201,7 +205,7 @@ class Vehicle(QObject):
         return cartesian_shift + reference_point
 
 
-    def place_vehicle(self, f:CartesianCoord, a:float):
+    def place_vehicle(self, f:CartesianCoord, a:float, floating:bool=False):
         """ 
         Place the vehicle at a given point and calculate the base point h
         This function is only needed at first vehicle placement
@@ -209,7 +213,8 @@ class Vehicle(QObject):
 
         @param f: Coordinate of reference point f
         @param a: Azimuth of the vehicle (0.0 facing east)
-        """         
+        @param floating: Whether the vehicle will be placed or just is floating. Default: False
+        """
         self._global_f = f
         self._global_a = a
         self._global_h = self._calc_global_coord(self._local_point_h)
@@ -219,7 +224,8 @@ class Vehicle(QObject):
         if self._trailer:
             self._trailer.place_vehicle(self._global_cp, self._global_a)
 
-        self._vehicle_is_placed = True
+        if not floating:
+            self._vehicle_is_placed = True
 
 
     def _get_front_wheel_radius(self) -> float:

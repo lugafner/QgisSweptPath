@@ -1,8 +1,7 @@
-
 from qgis.gui import QgsMapToolEmitPoint, QgisInterface, QgsMapCanvas, QgsMapMouseEvent, QgsRubberBand
 from qgis.core import QgsPointXY, QgsGeometry, Qgis
 from qgis.PyQt.QtCore import Qt, pyqtSignal
-from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtGui import QColor, QKeyEvent
 
 from .coord import CoordUtils, CartesianCoord
 from .vehicle import Vehicle
@@ -13,6 +12,7 @@ class VehiclePlacer(QgsMapToolEmitPoint):
     Qgis MapTool for placing the vehicle
     """
     placed = pyqtSignal(name="VehiclePlaced")
+    aborted = pyqtSignal(name="VehiclePlacementAborted")
 
     def __init__(self, iface: QgisInterface, vehicle: Vehicle):
         """
@@ -29,6 +29,9 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         # Base point and rotation
         self._base_point: CartesianCoord = CartesianCoord(0.0, 0.0)
         self._rotation: float = 0
+
+        self._old_base_point: CartesianCoord = self._vehicle.f
+        self._old_rotation: float = self._vehicle.a
 
         # Click counter:
         # 0 (first left mouse click) = vehicle base point
@@ -63,13 +66,23 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         if self._click_counter == 0:
             # If the click counter is 0, the vehicle base point will be moved
             self._set_base_point(position)
-            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
             self._draw_marker()
         else:
             # Else the rotation is recalculated
             self._set_rotation(position)
-            self._vehicle.place_vehicle(self._base_point, self._rotation)
+            self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
             self._draw_marker()
+
+
+    def keyPressEvent(self, e: QKeyEvent):
+        """
+        Event when a key is pressed
+        Used to exit the placer tool
+        @param e: QKeyEvent
+        """
+        if e.key() == Qt.Key_Escape:
+            self._abort_placement()
 
 
     def _position_clicked(self):
@@ -129,11 +142,22 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         Method is called, when the right mouse button is pressed
         The placement process will be stopped
         """
+        self._vehicle.place_vehicle(self._base_point, self._rotation, floating=False)
         self._vehicle.steering_angle = 0.0
         self._vehicle.speed = 0.0
         self._canvas.scene().removeItem(self._marker)  # Remove the rubber band
         self._click_counter = 0  # Set click counter to always start with positioning
         self.placed.emit()  # Emit the signal, that the vehicle is placed
+
+
+    def _abort_placement(self):
+        """
+        Method is called, when the Escape key is pressed
+        The placement process will be stopped
+        The vehicle will be placed floating. The placement status will not be updated
+        """
+        self._vehicle.place_vehicle(self._old_base_point, self._old_rotation, floating=True)
+        self.aborted.emit()
 
 
     def deactivate(self):

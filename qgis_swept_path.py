@@ -637,7 +637,6 @@ class QgisSweptPath:
 
 
     def _place_vehicle(self):
-        self.dockwidget.chbPlaceVehicle.setChecked(False)
         # Place the vehicle with the VehiclePlacer class
         if self._vehicle_layer is None:
             self.iface.messageBar().pushMessage(
@@ -652,7 +651,9 @@ class QgisSweptPath:
         else:
             self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
             self._vehicle_placer.placed.connect(self._vehicle_placed)
+            self._vehicle_placer.aborted.connect(self._place_vehicle_aborted)
             self.canvas.setMapTool(self._vehicle_placer)
+            self.canvas.setFocus(Qt.OtherFocusReason)
 
 
     def _vehicle_placed(self):
@@ -662,6 +663,18 @@ class QgisSweptPath:
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
         self.dockwidget.chbPlaceVehicle.setChecked(True)
+
+
+    def _place_vehicle_aborted(self):
+        # Unset the VechiclePlacer an exit
+        # Method is called, when the VehiclePlacer is aborted
+        self.canvas.unsetMapTool(self._vehicle_placer)
+        self.iface.actionPan().trigger()
+
+        self.iface.messageBar().pushMessage(
+            "Exit vehicle placement",
+            "No vehicle placed",
+            level=Qgis.Info)
 
 
     def _draw_vehicle(self):
