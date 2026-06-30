@@ -14,12 +14,17 @@ class VehiclePlacer(QgsMapToolEmitPoint):
     placed = pyqtSignal(name="VehiclePlaced")
     aborted = pyqtSignal(name="VehiclePlacementAborted")
 
-    def __init__(self, iface: QgisInterface, vehicle: Vehicle):
+    def __init__(self, iface: QgisInterface,
+                 vehicle: Vehicle,
+                 init_rotation: float = 0.0,
+                 init_position: CartesianCoord = CartesianCoord(0, 0)):
         """
         Constructor for a new VehiclePlacer
 
         @param iface: QgisInterface
         @param vehicle: The vehicle to be placed
+        @param init_rotation: The rotation used for initialise the placement. Default 0.0
+        @param init_position: The position used for initialise the placement. Default 0, 0
         """
         self._iface: QgisInterface = iface
         self._vehicle: Vehicle = vehicle
@@ -27,8 +32,8 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         QgsMapToolEmitPoint.__init__(self, self._canvas)
 
         # Base point and rotation
-        self._base_point: CartesianCoord = CartesianCoord(0.0, 0.0)
-        self._rotation: float = 0
+        self._base_point: CartesianCoord = init_position
+        self._rotation: float = init_rotation
 
         self._old_base_point: CartesianCoord = self._vehicle.f
         self._old_rotation: float = self._vehicle.a
@@ -40,6 +45,14 @@ class VehiclePlacer(QgsMapToolEmitPoint):
 
         # Marker to show the main vehicle part during placement
         self._marker = QgsRubberBand(self._canvas, Qgis.GeometryType.Polygon)
+
+        # If the position is the init value, the click counter is set to 1 for movement
+        # Else if a last position was present, the click counter is set to 0 so the vehicle could be placed on same position
+        if self._base_point == CartesianCoord(0, 0):
+            self._click_counter = 1
+        else:
+            self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
+            self._draw_marker()
 
 
     def canvasPressEvent(self, e: QgsMapMouseEvent):  # Signature warning can be ignored
@@ -64,7 +77,10 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         """
         position = self.toMapCoordinates(e.pos())
         if self._click_counter == 0:
-            # If the click counter is 0, the vehicle base point will be moved
+            # If the click counter is 0, the vehicle will not be moved or rotatet
+            pass
+        elif self._click_counter == 1:
+            # If the click counter is 1, the vehicle base point will be moved
             self._set_base_point(position)
             self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
             self._draw_marker()
@@ -91,9 +107,11 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         to switch between place and rotate mode
         """
         if self._click_counter == 0:
-            self._click_counter = 1 # Set counter to 1 to rotate the vehicle
+            self._click_counter = 1 # Set counter to 1 to move the vehicle
+        elif self._click_counter == 1:
+            self._click_counter = 2 # Set counter to 2 to rotate the vehicle
         else:
-            self._click_counter = 0  # Set counter to 0 for placing the vehicle again
+            self._click_counter = 1  # Set counter to 1 for placing the vehicle again
 
 
     def _set_rotation(self, position: QgsPointXY):

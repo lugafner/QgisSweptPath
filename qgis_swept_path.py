@@ -41,7 +41,7 @@ import os.path
 from .vehicle import Vehicle
 from .vehicle_status import VehicleStatus, VehicleStatusType, VehicleStatusAction
 
-from .coord import CoordUtils
+from .coord import CoordUtils, CartesianCoord
 from .vehicle_placer import VehiclePlacer
 from .path_points import PathPoints
 from .resources import *
@@ -88,6 +88,9 @@ class QgisSweptPath:
         self._units_p_pixel: float = 1
         # Map canvas extent. Used for automatic map movement.
         self._map_extent: QgsRectangle = self.canvas.extent()
+        # Position and rotation from the last vehicle placement
+        self._last_rotation: float = 0.0
+        self._last_position: CartesianCoord = CartesianCoord(0, 0)
 
 
     def run(self):
@@ -649,7 +652,10 @@ class QgisSweptPath:
                 "The vehicle must first be created",
                 level=Qgis.Critical)
         else:
-            self._vehicle_placer = VehiclePlacer(self.iface, self.vehicle)  # Tool for placing vehicle
+            self._vehicle_placer = VehiclePlacer(self.iface,
+                                                 self.vehicle,
+                                                 self._last_rotation,
+                                                 self._last_position)  # Tool for placing vehicle
             self._vehicle_placer.placed.connect(self._vehicle_placed)
             self._vehicle_placer.aborted.connect(self._place_vehicle_aborted)
             self.canvas.setMapTool(self._vehicle_placer)
@@ -662,6 +668,11 @@ class QgisSweptPath:
         self.canvas.unsetMapTool(self._vehicle_placer)
         self.iface.actionPan().trigger()
         self._create_vehicle_drawing()
+
+        # Set the actual rotation and placement to the variables
+        self._last_rotation = self.vehicle.a
+        self._last_position = self.vehicle.f
+
         self.dockwidget.chbPlaceVehicle.setChecked(True)
 
 
