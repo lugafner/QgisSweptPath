@@ -46,6 +46,14 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         # Marker to show the main vehicle part during placement
         self._marker = QgsRubberBand(self._canvas, Qgis.GeometryType.Polygon)
 
+        # If the position is the init value, the click counter is set to 1 for movement
+        # Else if a last position was present, the click counter is set to 0 so the vehicle could be placed on same position
+        if self._base_point == CartesianCoord(0, 0):
+            self._click_counter = 1
+        else:
+            self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
+            self._draw_marker()
+
 
     def canvasPressEvent(self, e: QgsMapMouseEvent):  # Signature warning can be ignored
         """
@@ -69,7 +77,10 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         """
         position = self.toMapCoordinates(e.pos())
         if self._click_counter == 0:
-            # If the click counter is 0, the vehicle base point will be moved
+            # If the click counter is 0, the vehicle will not be moved or rotatet
+            pass
+        elif self._click_counter == 1:
+            # If the click counter is 1, the vehicle base point will be moved
             self._set_base_point(position)
             self._vehicle.place_vehicle(self._base_point, self._rotation, floating=True)
             self._draw_marker()
@@ -96,9 +107,11 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         to switch between place and rotate mode
         """
         if self._click_counter == 0:
-            self._click_counter = 1 # Set counter to 1 to rotate the vehicle
+            self._click_counter = 1 # Set counter to 1 to move the vehicle
+        elif self._click_counter == 1:
+            self._click_counter = 2 # Set counter to 2 to rotate the vehicle
         else:
-            self._click_counter = 0  # Set counter to 0 for placing the vehicle again
+            self._click_counter = 1  # Set counter to 1 for placing the vehicle again
 
 
     def _set_rotation(self, position: QgsPointXY):
