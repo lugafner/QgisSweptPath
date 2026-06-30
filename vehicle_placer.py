@@ -14,12 +14,17 @@ class VehiclePlacer(QgsMapToolEmitPoint):
     placed = pyqtSignal(name="VehiclePlaced")
     aborted = pyqtSignal(name="VehiclePlacementAborted")
 
-    def __init__(self, iface: QgisInterface, vehicle: Vehicle):
+    def __init__(self, iface: QgisInterface,
+                 vehicle: Vehicle,
+                 init_rotation: float = 0.0,
+                 init_position: CartesianCoord = CartesianCoord(0, 0)):
         """
         Constructor for a new VehiclePlacer
 
         @param iface: QgisInterface
         @param vehicle: The vehicle to be placed
+        @param init_rotation: The rotation used for initialise the placement. Default 0.0
+        @param init_position: The position used for initialise the placement. Default 0, 0
         """
         self._iface: QgisInterface = iface
         self._vehicle: Vehicle = vehicle
@@ -27,8 +32,8 @@ class VehiclePlacer(QgsMapToolEmitPoint):
         QgsMapToolEmitPoint.__init__(self, self._canvas)
 
         # Base point and rotation
-        self._base_point: CartesianCoord = CartesianCoord(0.0, 0.0)
-        self._rotation: float = 0
+        self._base_point: CartesianCoord = init_position
+        self._rotation: float = init_rotation
 
         self._old_base_point: CartesianCoord = self._vehicle.f
         self._old_rotation: float = self._vehicle.a
